@@ -64,15 +64,11 @@ Ensure your ROS_DISTRO environment variable is set
 ```
 env | grep ROS
 ```
-You should see this variable with some other ROS settings:
-```
-ROS_DISTRO=humble
-```
 If it's not set you can try to update:
 ```
 export ROS_DISTRO=humble
 ```
-- Building the micro_ros_agent (https://github.com/micro-ROS/micro_ros_setup#building-micro-ros-agent)
+- Building the micro_ros_agent [micro-ROS](https://github.com/micro-ROS/micro_ros_setup#building-micro-ros-agent)
 ```
 cd ~
 mkdir ~/microros_ws && cd microros_ws
@@ -91,7 +87,7 @@ source install/local_setup.sh
 ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888
 ```
 
-6) **Installation check**
+1) **Installation check**
 
 Try the [px4-offboard](https://github.com/Jaeyoung-Lim/px4-offboard) example to check the installation
 
