@@ -2,7 +2,7 @@
 
 ### Example System Details
 
-- Ubuntu 22.02
+- Ubuntu 22.04
 - ROS2 Humble
 - micro-ROS
 - Python 3.10
@@ -10,6 +10,34 @@
 ### Set-up
 
 1) **Install ROS2 - Humble** ([ROS2-Humble](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html))
+
+- Installation with Ubuntu (Debian)
+- Additional packages
+
+Install common packages
+```
+sudo apt update && sudo apt install -y \
+  python3-flake8-docstrings \
+  python3-pip \
+  python3-pytest-cov \
+  ros-dev-tools
+```
+Install packages according to your Ubuntu version (Ubuntu 22.04).
+
+```
+sudo apt install -y \
+   python3-flake8-blind-except \
+   python3-flake8-builtins \
+   python3-flake8-class-newline \
+   python3-flake8-comprehensions \
+   python3-flake8-deprecated \
+   python3-flake8-import-order \
+   python3-flake8-quotes \
+   python3-pytest-repeat \
+   python3-pytest-rerunfailures
+```
+
+- Configuration environment step ([Tutorial section](https://docs.ros.org/en/humble/Tutorials.html))
 
 2) **Install QGroundControl** ([QGroundControl](https://docs.qgroundcontrol.com/master/en/getting_started/download_and_install.html))
 
@@ -87,7 +115,7 @@ source install/local_setup.sh
 ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888
 ```
 
-1) **Installation check**
+6) **Installation check**
 
 Try the [px4-offboard](https://github.com/Jaeyoung-Lim/px4-offboard) example to check the installation
 
