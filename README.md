@@ -1,16 +1,17 @@
-# PX4-drone-project
+# PX4-mini-drone
 
-## Example System Details
+### Example System Details
 
 - Ubuntu 22.02
 - ROS2 Humble
+- micro-ROS
 - Python 3.10
 
-## Set-up
+### Set-up
 
-1) **Install ros2 - Humble** (https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html)
+1) **Install ROS2 - Humble** ([ROS2-Humble](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html))
 
-2) **Install QGroundControl**
+2) **Install QGroundControl** ([QGroundControl](https://docs.qgroundcontrol.com/master/en/getting_started/download_and_install.html))
 
 - On the command prompt enter:
 ```
@@ -24,22 +25,40 @@ sudo apt install libfuse2 -y
 
 To install QGroundControl:
 
-- Download QGroundControl.AppImage. (https://d176tv9ibo4jno.cloudfront.net/latest/QGroundControl.AppImage)
+- Download QGroundControl.AppImage. ([QGroundControl.AppImage](https://d176tv9ibo4jno.cloudfront.net/latest/QGroundControl.AppImage))
 - Install (and run) using the terminal commands:
 
 ```
 chmod +x ./QGroundControl.AppImage
 ./QGroundControl.AppImage
 ```
-3) Download and install PX4 Source code
+3) **Download and install PX4 Source code**
 
+The PX4 source code is stored on Github in the [PX4/PX4-Autopilot](https://github.com/PX4/PX4-Autopilot) repository.
 ```
 git clone https://github.com/PX4/PX4-Autopilot.git --recursive
 ```
 ```
 bash ./PX4-Autopilot/Tools/setup/ubuntu.sh
 ```
-3a) **Install micro-ROS**
+
+4) **Install PX4 ROS Com and PX4 msg**
+
+Download the repositories
+```
+cd ~
+mkdir px4_ros_com_ws
+cd px4_ros_com_ws
+git clone https://github.com/PX4/px4_ros_com.git
+git clone https://github.com/PX4/px4_msgs.git
+```
+
+Build them:
+```
+colcon build
+```
+
+5) **Install micro-ROS agent**
 
 Ensure your ROS_DISTRO environment variable is set
 ```
@@ -66,5 +85,14 @@ ros2 run micro_ros_setup create_agent_ws.sh
 ros2 run micro_ros_setup build_agent.sh
 ```
 
-3b) **Install Micro-XRCE-DDS**
+Try running the agent
+```
+source install/local_setup.sh
+ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888
+```
 
+6) **Installation check**
+
+Try the [px4-offboard](https://github.com/Jaeyoung-Lim/px4-offboard) example to check the installation
+
+- TO DO
