@@ -198,7 +198,7 @@ source install/local_setup.sh
 ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888
 ```
 
-### Installation check
+### Installation check, you will need four terminals
 
 - Install the [px4-offboard](https://github.com/Jaeyoung-Lim/px4-offboard) example
 
@@ -234,6 +234,7 @@ make px4_sitl gazebo
 - Start QGround Controller and Take Off
 
 ``` bash
+cd ~/
 ./QGroundControl.AppImage
 ```
 
