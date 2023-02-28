@@ -1,17 +1,16 @@
-#include <rclcpp/rclcpp.hpp>
-#include <rclcpp/clock.hpp>
-
 #include <px4_msgs/msg/offboard_control_mode.hpp>
 #include <px4_msgs/msg/trajectory_setpoint.hpp>
-#include <px4_msgs/msg/vehicle_status.hpp>
-
 #include <px4_msgs/msg/vehicle_command.hpp>
 #include <px4_msgs/msg/vehicle_control_mode.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <px4_msgs/msg/vehicle_status.hpp>
+#include <px4_msgs/msg/timesync_status.hpp>
 
-// #include <px4_msgs/msg/timesync.hpp>
+// #include <rclcpp/clock.hpp>
 
 using namespace std::chrono;
 using namespace std::chrono_literals;
+// using namespace px4_msgs::msg;
 
 using std::placeholders::_1;
 
@@ -19,7 +18,7 @@ using std::placeholders::_1;
 class OffboardControl : public rclcpp::Node
 {
 public:
-	explicit OffboardControl() : Node("offboard_control")
+	OffboardControl() : Node("offboard_control")
 	{
     auto qos_sub = rclcpp::QoS(rclcpp::KeepLast(10)).best_effort().durability_volatile();
 	auto qos_pub = rclcpp::QoS(rclcpp::KeepLast(10)).best_effort().transient_local();
@@ -30,12 +29,11 @@ public:
 		qos_sub, std::bind(&OffboardControl::vehicle_status_clbk, this, _1)
 	);
 
-	// // get common timestamp
-	// this->timesync_sub_ =
-	// 		this->create_subscription<px4_msgs::msg::Timesync>("fmu/timesync/out", qos,
-	// 			[this](const px4_msgs::msg::Timesync::UniquePtr msg) {
-	// 				timestamp_.store(msg->timestamp);
-	// 			});
+	// get common timestamp
+	this->timesync_sub_ = this->create_subscription<px4_msgs::msg::TimesyncStatus>("fmu/timesync/out", qos_sub,
+		[this](const px4_msgs::msg::TimesyncStatus::UniquePtr msg) {
+			timestamp_.store(msg->timestamp);
+		});
 
 	// Create publishers
 	this->offboard_control_mode_publisher_ =
@@ -63,7 +61,7 @@ public:
 			this->publish_offboard_control_mode();
 			this->publish_trajectory_setpoint();
 
-           		 // stop the counter after reaching 11
+           	// stop the counter after reaching 11
 			if (this->offboard_setpoint_counter_ < 11) {
 				this->offboard_setpoint_counter_++;
 			}
@@ -84,14 +82,14 @@ private:
 	rclcpp::TimerBase::SharedPtr timer_;  // Timer that makes the node spin
 	uint8_t nav_state;
 	uint8_t arming_state;
-	// std::atomic<uint64_t> timestamp_;   //!< common synced timestamped
+	std::atomic<uint64_t> timestamp_;   //!< common synced timestamped
 	uint64_t offboard_setpoint_counter_;   //!< counter for the number of setpoints sent
 
 
 
 	// Subscribers
 	rclcpp::Subscription<px4_msgs::msg::VehicleStatus>::SharedPtr vehicle_status_sub_;
-		// rclcpp::Subscription<px4_msgs::msg::Timesync>::SharedPtr timesync_sub_;
+	rclcpp::Subscription<px4_msgs::msg::TimesyncStatus>::SharedPtr timesync_sub_;
 
 
 	// publishers
@@ -189,7 +187,7 @@ void OffboardControl::publish_trajectory_setpoint()  {
 }
 
 /**
- * @brief Entry point of Offboard node
+ * @brief Entry point of Offboard node (default)
  * 
  * @param argc 
  * @param argv 
@@ -197,7 +195,7 @@ void OffboardControl::publish_trajectory_setpoint()  {
  */
 int main(int argc, char ** argv)
 {
-  std::cout << "Starting offboard_control node..." << std::endl;
+	std::cout << "Starting offboard_control node..." << std::endl;
 	setvbuf(stdout, NULL, _IONBF, BUFSIZ);
 	rclcpp::init(argc, argv);
 	rclcpp::spin(std::make_shared<OffboardControl>());

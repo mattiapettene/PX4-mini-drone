@@ -21,6 +21,11 @@ add_executable(offboard_example src/offboard_example.cpp)
 ament_target_dependencies(offboard_example rclcpp std_msgs px4_msgs px4_ros_com) 
 install(TARGETS offboard_example DESTINATION lib/${PROJECT_NAME})
 
+# offboard_control.cpp
+add_executable(offboard_control src/offboard_control.cpp)
+ament_target_dependencies(offboard_control rclcpp std_msgs px4_msgs px4_ros_com) 
+install(TARGETS offboard_control DESTINATION lib/${PROJECT_NAME})
+
 # target_include_directories(offboard_example PUBLIC
 #   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 #   $<INSTALL_INTERFACE:include>)
