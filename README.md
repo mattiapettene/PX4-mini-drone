@@ -286,13 +286,13 @@ At this point will be created a folder named <package_name> in the workspace. In
 After setting the files, build the package:
 
 ``` bash
-source install/local_setup.bash
 colcon build
 ```
 
 Finally run the project:
 
 ``` bash
+source install/local_setup.bash
 ros2 run <package_name> <executable_name>
 ```
 
