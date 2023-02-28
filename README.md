@@ -256,7 +256,7 @@ ros2 launch px4_offboard offboard_position_control.launch.py
 - After a 1-2 sec pause, the demo should start
 
 
-### ROS2 package creation
+## ROS2 package creation
 To launch a new project it is necessary to add it to a packege created in this way:
 
 ``` bash
@@ -267,18 +267,21 @@ ros2 pkg create <package_name> --build-type <build_type>
 
 At this point will be created a folder named <package_name> in the workspace. In this folder there is another one that has the same name of the package and contains an init file: the project script has to be added in this folder.
 
-## Python project
-It is necessary to modify the setup.py file, compiling it adding:
+- **Python project**
 
-``` bash
-entry_points={
-        'console_scripts': [
-        	'<executable_name> = <package_name>.<script_name>:main',
-        ],
-```
+  It is necessary to modify the setup.py file, compiling it adding:
 
-## C++ project
-To be added
+  ``` bash
+  entry_points={
+          'console_scripts': [
+            '<executable_name> = <package_name>.<script_name>:main',
+          ],
+  ```
+
+- **C++ project**
+
+  To be added
+  
 
 After setting the files, build the package:
 
@@ -293,7 +296,7 @@ Finally run the project:
 ros2 run <package_name> <executable_name>
 ```
 
-- Build clean:
+### Build clean:
 It is possible to clean the workspace deleting the file created building the project:
 
 ``` bash
