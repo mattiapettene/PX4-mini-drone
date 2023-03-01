@@ -9,6 +9,7 @@
 #include <px4_msgs/msg/trajectory_setpoint.hpp>
 #include <px4_msgs/msg/vehicle_command.hpp>
 #include <px4_msgs/msg/vehicle_status.hpp>
+#include <px4_msgs/msg/timesync_status.hpp>
 
 #include <rclcpp/rclcpp.hpp>
 #include <chrono>
@@ -44,7 +45,6 @@ public:
 		/**
 		 * @brief of service
 		*/
-
 		rmw_qos_profile_t qos_profile = rmw_qos_profile_sensor_data;
 
 		auto qos = rclcpp::QoS(
@@ -55,7 +55,6 @@ public:
 		
 		// Set the durability setting to volatile
 		// auto qos_sub = rclcpp::QoS(rclcpp::KeepLast(10)).best_effort().durability_volatile();
-
 		// Set the durability setting to transient local
 		// auto qos_pub = rclcpp::QoS(rclcpp::KeepLast(10)).best_effort().transient_local();
 
@@ -63,6 +62,9 @@ public:
 		 * @brief Create subscriber
 		*/
 		vehicle_status_sub_ = this->create_subscription<VehicleStatus>("/fmu/out/vehicle_status",qos,std::bind(&OffboardControl::vehicle_status_clbk,this,_1));
+		timesync_sub_ = this->create_subscription<TimesyncStatus>("fmu/timesync/out",qos,[this](const TimesyncStatus::UniquePtr msg){
+			timestamp_.store(msg->timestamp);
+		});
 
 		/**
 		 * @brief Create publisher
@@ -76,6 +78,10 @@ public:
 		*/
 		offboard_setpoint_counter_ = 0;
 
+
+		/**
+		 * @brief Timer callback
+		*/
 		auto timer_callback = [this]() -> void {
 
 			if (offboard_setpoint_counter_ == 10) {
@@ -88,7 +94,8 @@ public:
 
 			// offboard_control_mode needs to be paired with trajectory_setpoint
 			publish_offboard_control_mode();
-			publish_trajectory_setpoint();
+			//publish_trajectory_setpoint();
+			publish_command_callback();
 
 			// stop the counter after reaching 11
 			if (offboard_setpoint_counter_ < 11) {
@@ -102,29 +109,41 @@ public:
 		theta = 0.0;
 		radius = 10.0;
 		omega = 0.5;
-		time_period = 0.02;
+		time_period = 0.1;
 	}
 
 	void arm();
 	void disarm();
-	void vehicle_status_callback(const VehicleStatus & msg);
 
 private:
 
+	/**
+	 * @brief Important variable
+	*/
 	rclcpp::TimerBase::SharedPtr timer_;
+	uint8_t nav_state;
+	uint8_t arming_state;
+	std::atomic<uint64_t> timestamp_;    //!< common synced timestamped
+	uint64_t offboard_setpoint_counter_; //!< counter for the number of setpoints sent
 
+	/**
+	 * @brief Publisher
+	*/
 	rclcpp::Publisher<OffboardControlMode>::SharedPtr offboard_control_mode_publisher_;
 	rclcpp::Publisher<TrajectorySetpoint>::SharedPtr trajectory_setpoint_publisher_;
 	rclcpp::Publisher<VehicleCommand>::SharedPtr vehicle_command_publisher_;
 
-	std::atomic<uint64_t> timestamp_;   //!< common synced timestamped
-
-	uint64_t offboard_setpoint_counter_;   //!< counter for the number of setpoints sent
+	/**
+	 * @brief Subscriber
+	*/
+	rclcpp::Subscription<TimesyncStatus>::SharedPtr timesync_sub_;
+	rclcpp::Subscription<VehicleStatus>::SharedPtr vehicle_status_sub_;
 
 	void publish_offboard_control_mode();
 	void publish_trajectory_setpoint();
 	void publish_vehicle_command(uint16_t command, float param1 = 0.0, float param2 = 0.0);
 	void publish_command_callback();
+	void vehicle_status_callback(const VehicleStatus & msg);
 };
 
 /**
@@ -198,11 +217,21 @@ void OffboardControl::publish_vehicle_command(uint16_t command, float param1, fl
 	vehicle_command_publisher_->publish(msg);
 }
 
+/**
+ * @brief 
+*/
 void vehicle_status_callback(const VehicleStatus & msg)
 {
-
+	this->arming_state = msg.arming_state;
+	this->nav_state = msg.nav_state;
+	RCLCPP_INFO(this->get_logger(), "ArmingState: %i\nNavState: %i", this->arming_state, this->nav_state);
 }
 
+/**
+ * @brief Publish a trajectory setpoint
+ *        For this example, it sends a trajectory setpoint to make the
+ *        vehicle flight in circle
+ */
 void publish_command_callback()
 {
 	TrajectorySetpoint msg{};
@@ -215,19 +244,6 @@ void publish_command_callback()
 
 	this->theta = this->theta + this->omega * this->time_period;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 //   __  __       _       
 //  |  \/  | __ _(_)_ __  
