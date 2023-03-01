@@ -61,7 +61,7 @@ public:
 		/**
 		 * @brief Create subscriber
 		*/
-		vehicle_status_sub_ = this->create_subscription<VehicleStatus>("/fmu/out/vehicle_status",qos,std::bind(&OffboardControl::vehicle_status_clbk,this,_1));
+		vehicle_status_sub_ = this->create_subscription<VehicleStatus>("/fmu/out/vehicle_status",qos,std::bind(&OffboardControl::vehicle_status_callback,this,_1));
 		timesync_sub_ = this->create_subscription<TimesyncStatus>("fmu/timesync/out",qos,[this](const TimesyncStatus::UniquePtr msg){
 			timestamp_.store(msg->timestamp);
 		});
@@ -106,10 +106,10 @@ public:
 		// Start publisher timer
 		timer_ = this->create_wall_timer(100ms, timer_callback);
 
-		theta = 0.0;
-		radius = 10.0;
-		omega = 0.5;
-		time_period = 0.1;
+		this->theta = 0.0;
+		this->radius = 10.0;
+		this->omega = 0.5;
+		this->time_period = 0.1;
 	}
 
 	void arm();
@@ -125,6 +125,11 @@ private:
 	uint8_t arming_state;
 	std::atomic<uint64_t> timestamp_;    //!< common synced timestamped
 	uint64_t offboard_setpoint_counter_; //!< counter for the number of setpoints sent
+
+	double theta = 0.0;
+	double radius = 10.0;
+	double omega = 0.5;
+	double time_period = 0.1;
 
 	/**
 	 * @brief Publisher
@@ -220,7 +225,7 @@ void OffboardControl::publish_vehicle_command(uint16_t command, float param1, fl
 /**
  * @brief 
 */
-void vehicle_status_callback(const VehicleStatus & msg)
+void OffboardControl::vehicle_status_callback(const VehicleStatus & msg)
 {
 	this->arming_state = msg.arming_state;
 	this->nav_state = msg.nav_state;
@@ -232,7 +237,7 @@ void vehicle_status_callback(const VehicleStatus & msg)
  *        For this example, it sends a trajectory setpoint to make the
  *        vehicle flight in circle
  */
-void publish_command_callback()
+void OffboardControl::publish_command_callback()
 {
 	TrajectorySetpoint msg{};
 	msg.position[0] = this->radius * cos(this->theta);
