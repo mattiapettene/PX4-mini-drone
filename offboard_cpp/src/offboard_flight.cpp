@@ -70,21 +70,23 @@ public:
 				this->publish_vehicle_command(VehicleCommand::VEHICLE_CMD_DO_SET_MODE, 1, 6);
 
 				// Arm the vehicle
-				//this->arm();
+				this->arm();
+			}
 
+			if (offboard_setpoint_counter_ == 15) {
+				
 				// Take-off
-				this->take_off();
+				//this->take_off();
 			}
 
 			// offboard_control_mode needs to be paired with trajectory_setpoint
 			publish_offboard_control_mode();
 
-
-			publish_trajectory_setpoint_take_off();
+			//publish_trajectory_setpoint_take_off();
 			//publish_trajectory_setpoint_circle();
 
 			// stop the counter after reaching 11
-			if (offboard_setpoint_counter_ > 200) {
+			if (offboard_setpoint_counter_ == 200) {
 				
 				// Land the vehicle
 				this->land();
@@ -184,7 +186,7 @@ void OffboardControl::land()
  */
 void OffboardControl::take_off()
 {
-	publish_vehicle_command(VehicleCommand::VEHICLE_CMD_NAV_TAKEOFF);
+	publish_vehicle_command(VehicleCommand::VEHICLE_CMD_NAV_TAKEOFF,0.0,0.0,0.0,-M_PI,0.0,0.0,5.0);
 
 	RCLCPP_INFO(this->get_logger(), "Take-off command send");
 }
@@ -200,7 +202,7 @@ void OffboardControl::publish_offboard_control_mode()
 	msg.position = true;
 	msg.velocity = false;
 	msg.acceleration = false;
-	msg.attitude = false;
+	msg.attitude = true;
 	msg.body_rate = false;
 	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
 	offboard_control_mode_publisher_->publish(msg);
