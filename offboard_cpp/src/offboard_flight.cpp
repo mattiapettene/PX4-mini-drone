@@ -1,9 +1,7 @@
-//   ___            _           _      
-//  |_ _|_ __   ___| |_   _  __| | ___ 
-//   | || '_ \ / __| | | | |/ _` |/ _ \
-//   | || | | | (__| | |_| | (_| |  __/
-//  |___|_| |_|\___|_|\__,_|\__,_|\___|
-                                    
+/**
+ * @author Corradini Giacomo
+*/
+
 #include <px4_msgs/msg/offboard_control_mode.hpp>
 #include <px4_msgs/msg/vehicle_control_mode.hpp>
 #include <px4_msgs/msg/trajectory_setpoint.hpp>
@@ -17,33 +15,22 @@
 #include <stdint.h>
 #include <math.h>
 
-//   _   _                                                
-//  | \ | | __ _ _ __ ___   ___  ___ _ __   __ _  ___ ___ 
-//  |  \| |/ _` | '_ ` _ \ / _ \/ __| '_ \ / _` |/ __/ _ \
-//  | |\  | (_| | | | | | |  __/\__ \ |_) | (_| | (_|  __/
-//  |_| \_|\__,_|_| |_| |_|\___||___/ .__/ \__,_|\___\___|
-//                                  |_|                   
-
 using namespace std::chrono;
 using namespace std::chrono_literals;
 using namespace px4_msgs::msg;
 
 using std::placeholders::_1;
 
-//    ____ _                  ___   __  __ _                         _  ____            _             _ 
-//   / ___| | __ _ ___ ___   / _ \ / _|/ _| |__   ___   __ _ _ __ __| |/ ___|___  _ __ | |_ _ __ ___ | |
-//  | |   | |/ _` / __/ __| | | | | |_| |_| '_ \ / _ \ / _` | '__/ _` | |   / _ \| '_ \| __| '__/ _ \| |
-//  | |___| | (_| \__ \__ \ | |_| |  _|  _| |_) | (_) | (_| | | | (_| | |__| (_) | | | | |_| | | (_) | |
-//   \____|_|\__,_|___/___/  \___/|_| |_| |_.__/ \___/ \__,_|_|  \__,_|\____\___/|_| |_|\__|_|  \___/|_|
-
-
+/**
+ * @brief OffboardControl class
+*/
 class OffboardControl : public rclcpp::Node
 {
 public:
 	OffboardControl() : Node("offboard_control")
 	{
 		/**
-		 * @brief of service
+		 * @brief quality of service
 		*/
 		rmw_qos_profile_t qos_profile = rmw_qos_profile_sensor_data;
 
@@ -52,11 +39,6 @@ public:
 				qos_profile.history,
 				qos_profile.depth
 			),qos_profile);
-		
-		// Set the durability setting to volatile
-		// auto qos_sub = rclcpp::QoS(rclcpp::KeepLast(10)).best_effort().durability_volatile();
-		// Set the durability setting to transient local
-		// auto qos_pub = rclcpp::QoS(rclcpp::KeepLast(10)).best_effort().transient_local();
 
 		/**
 		 * @brief Create subscriber
@@ -78,7 +60,6 @@ public:
 		*/
 		offboard_setpoint_counter_ = 0;
 
-
 		/**
 		 * @brief Timer callback
 		*/
@@ -89,18 +70,33 @@ public:
 				this->publish_vehicle_command(VehicleCommand::VEHICLE_CMD_DO_SET_MODE, 1, 6);
 
 				// Arm the vehicle
-				this->arm();
+				//this->arm();
+
+				// Take-off
+				this->take_off();
 			}
 
 			// offboard_control_mode needs to be paired with trajectory_setpoint
 			publish_offboard_control_mode();
-			//publish_trajectory_setpoint();
-			publish_command_callback();
+
+
+			publish_trajectory_setpoint_take_off();
+			//publish_trajectory_setpoint_circle();
 
 			// stop the counter after reaching 11
-			if (offboard_setpoint_counter_ < 11) {
+			if (offboard_setpoint_counter_ > 200) {
+				
+				// Land the vehicle
+				this->land();
+
+				// Disarm
+				this->disarm();
+			}
+			
+			if (offboard_setpoint_counter_ < 201) {
 				offboard_setpoint_counter_++;
 			}
+
 		};
 
 		// Start publisher timer
@@ -114,6 +110,8 @@ public:
 
 	void arm();
 	void disarm();
+	void land();
+	void take_off();
 
 private:
 
@@ -145,9 +143,9 @@ private:
 	rclcpp::Subscription<VehicleStatus>::SharedPtr vehicle_status_sub_;
 
 	void publish_offboard_control_mode();
-	void publish_trajectory_setpoint();
-	void publish_vehicle_command(uint16_t command, float param1 = 0.0, float param2 = 0.0);
-	void publish_command_callback();
+	void publish_trajectory_setpoint_take_off();
+	void publish_vehicle_command(uint16_t command, float param1 = 0.0, float param2 = 0.0, float param3 = 0.0, float param4 = 0.0, float param5 = 0.0, float param6 = 0.0, float param7 = 0.0);
+	void publish_trajectory_setpoint_circle();
 	void vehicle_status_callback(const VehicleStatus & msg);
 };
 
@@ -172,6 +170,27 @@ void OffboardControl::disarm()
 }
 
 /**
+ * @brief Send a command to Land the vehicle
+ */
+void OffboardControl::land()
+{
+	publish_vehicle_command(VehicleCommand::VEHICLE_CMD_NAV_LAND);
+
+	RCLCPP_INFO(this->get_logger(), "Land command send");
+}
+
+/**
+ * @brief Send a command to Take off the vehicle
+ */
+void OffboardControl::take_off()
+{
+	publish_vehicle_command(VehicleCommand::VEHICLE_CMD_NAV_TAKEOFF);
+
+	RCLCPP_INFO(this->get_logger(), "Take-off command send");
+}
+
+
+/**
  * @brief Publish the offboard control mode.
  *        For this example, only position and altitude controls are active.
  */
@@ -188,30 +207,21 @@ void OffboardControl::publish_offboard_control_mode()
 }
 
 /**
- * @brief Publish a trajectory setpoint
- *        For this example, it sends a trajectory setpoint to make the
- *        vehicle hover at 5 meters with a yaw angle of 180 degrees.
- */
-void OffboardControl::publish_trajectory_setpoint()
-{
-	TrajectorySetpoint msg{};
-	msg.position = {0.0, 0.0, -5.0};
-	msg.yaw = -3.14; // [-PI:PI]
-	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
-	trajectory_setpoint_publisher_->publish(msg);
-}
-
-/**
  * @brief Publish vehicle commands
  * @param command   Command code (matches VehicleCommand and MAVLink MAV_CMD codes)
  * @param param1    Command parameter 1
  * @param param2    Command parameter 2
  */
-void OffboardControl::publish_vehicle_command(uint16_t command, float param1, float param2)
+void OffboardControl::publish_vehicle_command(uint16_t command, float param1, float param2, float param3, float param4, float param5, float param6, float param7)
 {
 	VehicleCommand msg{};
 	msg.param1 = param1;
 	msg.param2 = param2;
+	msg.param3 = param3;
+	msg.param4 = param4;
+	msg.param5 = param5;
+	msg.param6 = param6;
+	msg.param7 = param7;
 	msg.command = command;
 	msg.target_system = 1;
 	msg.target_component = 1;
@@ -229,7 +239,23 @@ void OffboardControl::vehicle_status_callback(const VehicleStatus & msg)
 {
 	this->arming_state = msg.arming_state;
 	this->nav_state = msg.nav_state;
-	RCLCPP_INFO(this->get_logger(), "ArmingState: %i\nNavState: %i", this->arming_state, this->nav_state);
+	//RCLCPP_INFO(this->get_logger(), "ArmingState: %i\nNavState: %i\n", this->arming_state, this->nav_state);
+	RCLCPP_INFO(this->get_logger(), "Setpoint: %li\n", this->offboard_setpoint_counter_);
+
+}
+
+/**
+ * @brief Publish a trajectory setpoint
+ *        For this example, it sends a trajectory setpoint to make the
+ *        vehicle hover at 5 meters with a yaw angle of 180 degrees.
+ */
+void OffboardControl::publish_trajectory_setpoint_take_off()
+{
+	TrajectorySetpoint msg{};
+	msg.position = {0.0, 0.0, -5.0};
+	msg.yaw = -3.14; // [-PI:PI]
+	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
+	trajectory_setpoint_publisher_->publish(msg);
 }
 
 /**
@@ -237,7 +263,7 @@ void OffboardControl::vehicle_status_callback(const VehicleStatus & msg)
  *        For this example, it sends a trajectory setpoint to make the
  *        vehicle flight in circle
  */
-void OffboardControl::publish_command_callback()
+void OffboardControl::publish_trajectory_setpoint_circle()
 {
 	TrajectorySetpoint msg{};
 	msg.position[0] = this->radius * cos(this->theta);
@@ -250,11 +276,9 @@ void OffboardControl::publish_command_callback()
 	this->theta = this->theta + this->omega * this->time_period;
 }
 
-//   __  __       _       
-//  |  \/  | __ _(_)_ __  
-//  | |\/| |/ _` | | '_ \ 
-//  | |  | | (_| | | | | |
-//  |_|  |_|\__,_|_|_| |_|
+/**
+ * @brief main
+*/
 
 int main(int argc, char *argv[])
 {
