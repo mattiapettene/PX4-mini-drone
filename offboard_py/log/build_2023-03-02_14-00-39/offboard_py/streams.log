@@ -1,0 +1,26 @@
+[0.340s] Invoking command in '/home/mattia/PX4-mini-drone/offboard_py': PYTHONPATH=/home/mattia/PX4-mini-drone/offboard_py/build/offboard_py/prefix_override:/home/mattia/PX4-mini-drone/offboard_py/install/offboard_py/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py egg_info --egg-base build/offboard_py build --build-base /home/mattia/PX4-mini-drone/offboard_py/build/offboard_py/build install --record /home/mattia/PX4-mini-drone/offboard_py/build/offboard_py/install.log --single-version-externally-managed
+[0.466s] running egg_info
+[0.466s] writing build/offboard_py/offboard_py.egg-info/PKG-INFO
+[0.467s] writing dependency_links to build/offboard_py/offboard_py.egg-info/dependency_links.txt
+[0.467s] writing entry points to build/offboard_py/offboard_py.egg-info/entry_points.txt
+[0.467s] writing requirements to build/offboard_py/offboard_py.egg-info/requires.txt
+[0.467s] writing top-level names to build/offboard_py/offboard_py.egg-info/top_level.txt
+[0.468s] reading manifest file 'build/offboard_py/offboard_py.egg-info/SOURCES.txt'
+[0.468s] writing manifest file 'build/offboard_py/offboard_py.egg-info/SOURCES.txt'
+[0.468s] running build
+[0.468s] running build_py
+[0.468s] copying offboard_py/offboard_control.py -> /home/mattia/PX4-mini-drone/offboard_py/build/offboard_py/build/lib/offboard_py
+[0.469s] running install
+[0.469s] /usr/lib/python3/dist-packages/setuptools/command/install.py:34: SetuptoolsDeprecationWarning: setup.py install is deprecated. Use build and pip and other standards-based tools.
+[0.469s]   warnings.warn(
+[0.469s] running install_lib
+[0.469s] copying /home/mattia/PX4-mini-drone/offboard_py/build/offboard_py/build/lib/offboard_py/offboard_control.py -> /home/mattia/PX4-mini-drone/offboard_py/install/offboard_py/lib/python3.10/site-packages/offboard_py
+[0.469s] byte-compiling /home/mattia/PX4-mini-drone/offboard_py/install/offboard_py/lib/python3.10/site-packages/offboard_py/offboard_control.py to offboard_control.cpython-310.pyc
+[0.470s] running install_data
+[0.470s] running install_egg_info
+[0.471s] removing '/home/mattia/PX4-mini-drone/offboard_py/install/offboard_py/lib/python3.10/site-packages/offboard_py-0.0.0-py3.10.egg-info' (and everything under it)
+[0.471s] Copying build/offboard_py/offboard_py.egg-info to /home/mattia/PX4-mini-drone/offboard_py/install/offboard_py/lib/python3.10/site-packages/offboard_py-0.0.0-py3.10.egg-info
+[0.472s] running install_scripts
+[0.484s] Installing offboard_control script to /home/mattia/PX4-mini-drone/offboard_py/install/offboard_py/lib/offboard_py
+[0.484s] writing list of installed files to '/home/mattia/PX4-mini-drone/offboard_py/build/offboard_py/install.log'
+[0.499s] Invoked command in '/home/mattia/PX4-mini-drone/offboard_py' returned '0': PYTHONPATH=/home/mattia/PX4-mini-drone/offboard_py/build/offboard_py/prefix_override:/home/mattia/PX4-mini-drone/offboard_py/install/offboard_py/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py egg_info --egg-base build/offboard_py build --build-base /home/mattia/PX4-mini-drone/offboard_py/build/offboard_py/build install --record /home/mattia/PX4-mini-drone/offboard_py/build/offboard_py/install.log --single-version-externally-managed

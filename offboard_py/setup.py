@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+        	'offboard_control = offboard_py.offboard_control:main',
         ],
     },
 )
