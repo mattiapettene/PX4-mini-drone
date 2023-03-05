@@ -65,6 +65,12 @@ public:
 		*/
 		auto timer_callback = [this]() -> void {
 
+			if (offboard_setpoint_counter_ < 10) {
+				// offboard_control_mode needs to be paired with trajectory_setpoint
+				publish_offboard_control_mode();
+				publish_trajectory_setpoint_take_off();
+			}	
+			
 			if (offboard_setpoint_counter_ == 10) {
 				// Change to Offboard mode after 10 setpoints
 				this->publish_vehicle_command(VehicleCommand::VEHICLE_CMD_DO_SET_MODE, 1, 6);
@@ -73,20 +79,15 @@ public:
 				this->arm();
 			}
 
-			if (offboard_setpoint_counter_ == 15) {
+			if (offboard_setpoint_counter_ > 30 && offboard_setpoint_counter_ < 200) {
 				
-				// Take-off
-				//this->take_off();
+				publish_offboard_control_mode();
+				publish_trajectory_setpoint_circle();
+
 			}
 
-			// offboard_control_mode needs to be paired with trajectory_setpoint
-			publish_offboard_control_mode();
-
-			//publish_trajectory_setpoint_take_off();
-			//publish_trajectory_setpoint_circle();
-
 			// stop the counter after reaching 11
-			if (offboard_setpoint_counter_ == 200) {
+			if (offboard_setpoint_counter_ == 400) {
 				
 				// Land the vehicle
 				this->land();
@@ -95,7 +96,7 @@ public:
 				this->disarm();
 			}
 			
-			if (offboard_setpoint_counter_ < 201) {
+			if (offboard_setpoint_counter_ < 501) {
 				offboard_setpoint_counter_++;
 			}
 
@@ -113,7 +114,6 @@ public:
 	void arm();
 	void disarm();
 	void land();
-	void take_off();
 
 private:
 
@@ -180,17 +180,6 @@ void OffboardControl::land()
 
 	RCLCPP_INFO(this->get_logger(), "Land command send");
 }
-
-/**
- * @brief Send a command to Take off the vehicle
- */
-void OffboardControl::take_off()
-{
-	publish_vehicle_command(VehicleCommand::VEHICLE_CMD_NAV_TAKEOFF,0.0,0.0,0.0,-M_PI,0.0,0.0,5.0);
-
-	RCLCPP_INFO(this->get_logger(), "Take-off command send");
-}
-
 
 /**
  * @brief Publish the offboard control mode.
