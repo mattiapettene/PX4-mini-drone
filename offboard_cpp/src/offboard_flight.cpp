@@ -65,7 +65,7 @@ public:
 		*/
 		auto timer_callback = [this]() -> void {
 
-			if (offboard_setpoint_counter_ < 10) {
+			if (offboard_setpoint_counter_ < 100) {
 				// offboard_control_mode needs to be paired with trajectory_setpoint
 				publish_offboard_control_mode();
 				publish_trajectory_setpoint_take_off();
@@ -79,7 +79,7 @@ public:
 				this->arm();
 			}
 
-			if (offboard_setpoint_counter_ > 30 && offboard_setpoint_counter_ < 200) {
+			if (offboard_setpoint_counter_ > 100 && offboard_setpoint_counter_ < 300) {
 				
 				publish_offboard_control_mode();
 				publish_trajectory_setpoint_circle();
