@@ -99,6 +99,10 @@ public:
 			if (offboard_setpoint_counter_ < 501) {
 				offboard_setpoint_counter_++;
 			}
+			if (offboard_setpoint_counter_ == 501) {
+				rclcpp::shutdown();
+			}
+
 
 		};
 
