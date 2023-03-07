@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'point_list_py = point_list_py.point_list:main',
         ],
     },
 )
