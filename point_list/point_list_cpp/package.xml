@@ -3,8 +3,8 @@
 <package format="3">
   <name>point_list_cpp</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="81318801+mattiapettene@users.noreply.github.com">mattia</maintainer>
+  <description>Example of PX4 offboard, point list cpp</description>
+  <maintainer email="corra981@gmail.com">giacomo</maintainer>
   <license>TODO: License declaration</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

@@ -10,6 +10,15 @@ find_package(ament_cmake REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(px4_msgs REQUIRED)
+find_package(px4_ros_com REQUIRED)
+
+# offboard_control.cpp
+add_executable(offboard_point_list src/offboard_point_list.cpp)
+ament_target_dependencies(offboard_point_list rclcpp std_msgs px4_msgs px4_ros_com) 
+install(TARGETS offboard_point_list DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
