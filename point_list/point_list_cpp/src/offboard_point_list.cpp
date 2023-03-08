@@ -15,6 +15,38 @@
 #include <stdint.h>
 #include <math.h>
 #include <stdbool.h>
+#include <vector>
+#include <algorithm>
+
+class offboard_point_list
+{
+
+public:
+	float position_x; 
+	float position_y; 
+	float position_z; 
+	float position_yaw;
+
+	offboard_point_list(float position_x, float position_y, float position_z, float position_yaw);
+	~offboard_point_list();
+};
+
+offboard_point_list::offboard_point_list(float position_x, float position_y, float position_z, float position_yaw)
+{
+	this->position_x   = position_x; 
+	this->position_y   = position_y; 
+	this->position_z   = position_z; 
+	this->position_yaw = position_yaw;
+}
+
+offboard_point_list::~offboard_point_list()
+{
+}
+
+float distance(float x1, float y1, float z1, float x2, float y2, float z2)
+{
+    return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2) + pow(z2 - z1, 2) * 1.0);
+}
 
 using namespace std::chrono;
 using namespace std::chrono_literals;
@@ -31,15 +63,21 @@ public:
 	OffboardControl() : Node("offboard_control")
 	{
 		/**
+		 * @brief add points to point list
+		*/
+		this->point_list.push_back(this->point_1);
+		this->point_list.push_back(this->point_2);
+
+		/**
 		 * @brief quality of service
 		*/
 		rmw_qos_profile_t qos_profile = rmw_qos_profile_sensor_data;
 
 		auto qos = rclcpp::QoS(
-			rclcpp::QoSInitialization(
-				qos_profile.history,
-				qos_profile.depth
-			),qos_profile);
+				   rclcpp::QoSInitialization(
+				   qos_profile.history,
+				   qos_profile.depth
+				   ),qos_profile);
 
 		/**
 		 * @brief Create subscriber
@@ -64,57 +102,44 @@ public:
 		*/
 		auto timer_callback = [this]() -> void {
 
-			if (offboard_setpoint_counter_ < 100) {
-				// offboard_control_mode needs to be paired with trajectory_setpoint
-				publish_offboard_control_mode();
-				publish_trajectory_setpoint_take_off();
-			}
-			
 			if (offboard_setpoint_counter_ == 10) {
-				// Change to Offboard mode after 10 setpoints
+				// Change to publish command mode after 10 setpoints
 				this->publish_vehicle_command(VehicleCommand::VEHICLE_CMD_DO_SET_MODE, 1, 6);
 
 				// Arm the vehicle
 				this->arm();
 			}
-
-			if (offboard_setpoint_counter_ > 100 && offboard_setpoint_counter_ < 380) {
-				
+			
+			if(point_list.size() > this->index){
 				publish_offboard_control_mode();
-				publish_trajectory_setpoint_circle();
-			}
-
-			// stop the counter after reaching 11
-			if (offboard_setpoint_counter_ == 400) {
+				publish_trajectory(this->point_list);
+				if(point_list.size() == this->index) this->flag_to_land = offboard_setpoint_counter_ + 50;
+			} else if(offboard_setpoint_counter_ == this->flag_to_land && offboard_setpoint_counter_ > 0) {
 				
-				this->land();
+				this->publish_vehicle_command(VehicleCommand::VEHICLE_CMD_DO_SET_MODE, 1, 6);
+				
+				this->land_to_launch();
 
 				// Disarm
 				this->disarm();
+
+				this->flag_to_shutdown = offboard_setpoint_counter_ + 100;
 			}
 			
-			if (offboard_setpoint_counter_ < 501) {
-				offboard_setpoint_counter_++;
-			} else {
-				rclcpp::shutdown();
-			}
 
+			if(offboard_setpoint_counter_ == this->flag_to_shutdown && offboard_setpoint_counter_ > 0) rclcpp::shutdown();
+
+			offboard_setpoint_counter_++;
 		};
 
 		// Start publisher timer
-		timer_ = this->create_wall_timer(100ms, timer_callback);
-
-		this->theta = 0.0;
-		this->radius = 10.0;
-		this->omega = 0.5;
-		this->time_period = 0.1;
-		
+		timer_ = this->create_wall_timer(100ms, timer_callback);		
 	}
 
 	void arm();
 	void disarm();
 	void land();
-    void land_to_launch();
+	void land_to_launch();
 
 private:
 
@@ -124,26 +149,15 @@ private:
 	rclcpp::TimerBase::SharedPtr timer_;
 	std::atomic<uint64_t> timestamp_;    //!< common synced timestamped
 	uint64_t offboard_setpoint_counter_; //!< counter for the number of setpoints sent
-
-    /**
-     * @brief position variables
-    */
-    float x_coordinate;
-	float y_coordinate;
-	float z_coordinate;
-
-    /**
-     * @brief trajectory coordinate
-    */
-	double theta = 0.0;
-	double radius = 10.0;
-	double omega = 0.5;
-	double time_period = 0.1;
+	uint64_t flag_to_shutdown = 0;
+	uint64_t flag_to_land = 0;
+	size_t index = 0;
+	float tolerance = 0.05;     // tolerance
 
 	/**
 	 * @brief messages
 	*/
-	std::shared_ptr<VehicleLocalPosition> message;
+	VehicleLocalPosition message;
 
 	/**
 	 * @brief Publisher
@@ -158,12 +172,19 @@ private:
 	rclcpp::Subscription<VehicleStatus>::SharedPtr vehicle_status_sub_;
 	rclcpp::Subscription<VehicleLocalPosition>::SharedPtr vehicle_position_sub_;
 
+	/**
+	 * @brief Points list
+	*/
+	offboard_point_list* point_1 = new offboard_point_list(0.,0.,-1.,-M_PI);
+	offboard_point_list* point_2 = new offboard_point_list(1.,0.,-1.,-M_PI);
+	std::vector<offboard_point_list *> point_list;
+
 	void publish_offboard_control_mode();
-	void publish_trajectory_setpoint_take_off();
 	void publish_vehicle_command(uint16_t command, float param1 = 0.0, float param2 = 0.0, float param3 = 0.0, float param4 = 0.0, float param5 = 0.0, float param6 = 0.0, float param7 = 0.0);
-	void publish_trajectory_setpoint_circle();
 	void vehicle_status_callback(const VehicleStatus & msg);
 	void vehicle_position_callback(const VehicleLocalPosition & msg);
+	void publish_trajectory_setpoint(offboard_point_list* point);
+	void publish_trajectory(std::vector<offboard_point_list *> point_list);
 };
 
 /**
@@ -197,7 +218,7 @@ void OffboardControl::land()
 }
 
 /**
- * @brief Send a command to Land the vehicle
+ * @brief Send a command to Land the vehicle in the current position
  */
 void OffboardControl::land_to_launch()
 {
@@ -205,6 +226,7 @@ void OffboardControl::land_to_launch()
 
 	RCLCPP_INFO(this->get_logger(), "Land to launch position command send");
 }
+
 
 /**
  * @brief Publish the offboard control mode.
@@ -258,7 +280,7 @@ void OffboardControl::publish_vehicle_command(uint16_t command, float param1, fl
 */
 void OffboardControl::vehicle_status_callback(const VehicleStatus & msg)
 {
-	RCLCPP_INFO(this->get_logger(), "Setpoint: %li\n", this->offboard_setpoint_counter_);
+	RCLCPP_INFO(this->get_logger(), "\nArming state: %i, Navigation state: %i\n", msg.arming_state, msg.nav_state);
 }
 
 /**
@@ -266,47 +288,42 @@ void OffboardControl::vehicle_status_callback(const VehicleStatus & msg)
 */
 void OffboardControl::vehicle_position_callback(const VehicleLocalPosition & msg)
 {	
-    this->x_coordinate = msg.x;
-    this->y_coordinate = msg.y;
-    this->z_coordinate = msg.z;
-
-	RCLCPP_INFO(this->get_logger(),"\nX coordinate: %f\nY coordinate %f\nZ coordinate %f",this->x_coordinate,this->y_coordinate,this->z_coordinate);
+	this->message = msg;
+	RCLCPP_INFO(this->get_logger(),"\nX coordinate: %f\nY coordinate %f\nZ coordinate %f", message.x, message.y, message.z);
 }
 
 /**
- * @brief Publish a trajectory setpoint
- *        For this example, it sends a trajectory setpoint to make the
- *        vehicle hover at 5 meters with a yaw angle of 180 degrees.
+ * @brief Publish a setpoint
  */
-void OffboardControl::publish_trajectory_setpoint_take_off()
+void OffboardControl::publish_trajectory_setpoint(offboard_point_list* point)
 {
 	TrajectorySetpoint msg{};
-	msg.position = {0.0, 0.0, -1.0};
-	msg.yaw = -3.14; // [-PI:PI]
 	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
+	msg.position[0] = point->position_x;
+	msg.position[1] = point->position_y;
+	msg.position[2] = point->position_z;
+	msg.yaw = point->position_yaw;
 	trajectory_setpoint_publisher_->publish(msg);
 }
 
 /**
- * @brief Publish a trajectory setpoint
- *        For this example, it sends a trajectory setpoint to make the
- *        vehicle flight in circle
- */
-void OffboardControl::publish_trajectory_setpoint_circle()
+ * @brief Pulblish a trajectory set points
+*/
+void OffboardControl::publish_trajectory(std::vector<offboard_point_list *> point_list)
 {
-	TrajectorySetpoint msg{};
-	msg.position = {1.0, 0.0, -1.0};
-	msg.yaw = -3.14; // [-PI:PI]
-	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
-	trajectory_setpoint_publisher_->publish(msg);
-
-	this->theta = this->theta + this->omega * this->time_period;
+	float dist = distance(this->message.x, this->message.y, this->message.z, point_list[this->index]->position_x, point_list[this->index]->position_y, point_list[this->index]->position_z);
+	
+	if(dist > this->tolerance){
+		this->publish_trajectory_setpoint(point_list[this->index]);
+		RCLCPP_INFO(this->get_logger(), "Distance %f, index %ld\n", dist, this->index);
+	} else if (dist <= this->tolerance){
+		this->index++;
+	}
 }
 
 /**
  * @brief main
 */
-
 int main(int argc, char *argv[])
 {
 	std::cout << "Starting offboard control node..." << std::endl;
