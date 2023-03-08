@@ -1,8 +1,3 @@
-"""
-Python implementation of Offboard Control
-
-"""
-
 import rclpy
 import numpy as np
 from rclpy.node import Node
@@ -21,9 +16,9 @@ class OffboardControl(Node):
         super().__init__('OffboardControl')
 
         qos_profile = QoSProfile(
-            reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT,
-            durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL,
-            history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+            reliability=QoSReliabilityPolicy.BEST_EFFORT,
+            durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+            history=QoSHistoryPolicy.KEEP_LAST,
             depth=1
         )
 
@@ -45,29 +40,54 @@ class OffboardControl(Node):
         self.omega = 0.5
         self.theta = 0.0
         self.dt = timer_period
-        self.land_to_initial_position = True
+        self.land_to_initial_position = False
+
+        # Vehicle position
+        self.x = 0.0
+        self.y = 0.0
+        self.z = 0.0
+
+        # Point list definition
+        p0 = Point(0.0, 0.0, 0.0)
+        p1 = Point(0.0, 0.0, -1.0)
+        p2 = Point(1.0, 0.0, -1.0)
+        self.point_list = [p0, p1, p2]
+        self.n = len(self.point_list)
+        self.range = 0.2 # 20 cm
+        self.end = False
+        self.i = 0
+        self.temp = 0
 
 
     def timer_callback(self):
         if (self.offboard_setpoint_counter_ == 10):
             # Change to Offboard mode after 10 setpoints
             self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_DO_SET_MODE, 1., 6.)
+
+            #Print initial position
+            self.get_logger().info("Initial position: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
+
             # Arm the vehicle
             self.arm()
 
-        # Offboard_control_mode needs to be paired with trajectory_setpoint
-        self.publish_offboard_control_mode()
-        self.publish_trajectory_setpoint()
+        if (self.offboard_setpoint_counter_ >= 10 and self.i < self.n):
+            # Offboard_control_mode needs to be paired with trajectory_setpoint
+            self.publish_offboard_control_mode()
+            self.publish_trajectory_setpoint()
 
-        if(self.offboard_setpoint_counter_ == 300):
-            # land and disarm after 30 seconds
+        if(self.end == True and self.temp == 1):
             if(self.land_to_initial_position == False):
                 self.land()
             else:
                 self.land_to_initial_pos()
                 self.get_logger().info("Landing to initial position")
             
+            self.temp += 1
+            
+        if(abs(self.z) <= self.range and self.temp == 2):
             self.disarm()
+            self.temp += 1
+
 
         self.offboard_setpoint_counter_ += 1
 
@@ -115,19 +135,27 @@ class OffboardControl(Node):
 
     def publish_trajectory_setpoint(self):
         msg = TrajectorySetpoint()
-        #msg.timestamp = self.timestamp_
+        point = self.point_list
+        range = self.range
 
-        x = self.radius * np.cos(self.theta)
-        y = self.radius * np.sin(self.theta)
-        z = -5.0
-        msg.position = [x, y, z] 
+        
+        if(abs(point[self.i].x) - abs(self.x)  < range and abs(point[self.i].y) - abs(self.y) < range and abs(point[self.i].z) - abs(self.z) < range):
+            if self.i < self.n - 1:
+                self.get_logger().info("Position reached: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
+                self.i += 1
+            elif(self.temp<1):
+                self.end = True
+                self.temp = 1
+                self.get_logger().info("Position reached: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
+        
+
+        
+        msg.position = [point[self.i].x, point[self.i].y, point[self.i].z]
         msg.yaw = -3.14  # [-PI:PI]
 
         msg.timestamp = int(Clock().now().nanoseconds / 1000) # time in microseconds
         self.trajectory_setpoint_publisher_.publish(msg)
-        #self.get_vehicle_position()
 
-        self.theta = self.theta + self.omega * self.dt
 
     '''
     Publish vehicle commands
@@ -154,11 +182,10 @@ class OffboardControl(Node):
         self.vehicle_command_publisher_.publish(msg)
 
     def get_vehicle_position(self, msg):
-        pos_x = msg.x
-        pos_y = msg.y
-        pos_z = msg.z
-
-        self.get_logger().info("Posizione attuale: ({:.2f}, {:.2f}, {:.2f})".format(pos_x, pos_y, pos_z))
+        # x, y, z are updated at each time step
+        self.x = msg.x
+        self.y = msg.y
+        self.z = msg.z
 
         
 def main(args=None):
@@ -172,6 +199,13 @@ def main(args=None):
     # when the garbage collector destroys the node object)
     offboard_control.destroy_node()
     rclpy.shutdown()
+
+
+class Point:
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
 
 
 if __name__ == '__main__':
