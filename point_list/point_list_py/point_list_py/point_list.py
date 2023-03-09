@@ -53,7 +53,7 @@ class OffboardControl(Node):
         p2 = Point(1.0, 0.0, -1.0)
         self.point_list = [p0, p1, p2]
         self.n = len(self.point_list)
-        self.range = 0.2 # 20 cm
+        self.range = 0.05 # 5 cm
         self.end = False
         self.i = 0
         self.temp = 0
@@ -139,7 +139,7 @@ class OffboardControl(Node):
         range = self.range
 
         
-        if(abs(point[self.i].x) - abs(self.x)  < range and abs(point[self.i].y) - abs(self.y) < range and abs(point[self.i].z) - abs(self.z) < range):
+        if(self.distance(point[self.i]) <= range):
             if self.i < self.n - 1:
                 self.get_logger().info("Position reached: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
                 self.i += 1
@@ -151,7 +151,7 @@ class OffboardControl(Node):
 
         
         msg.position = [point[self.i].x, point[self.i].y, point[self.i].z]
-        msg.yaw = -3.14  # [-PI:PI]
+        msg.yaw = 0.0 
 
         msg.timestamp = int(Clock().now().nanoseconds / 1000) # time in microseconds
         self.trajectory_setpoint_publisher_.publish(msg)
@@ -186,6 +186,10 @@ class OffboardControl(Node):
         self.x = msg.x
         self.y = msg.y
         self.z = msg.z
+    
+    def distance(self, p):
+        d = np.sqrt((p.x- self.x)**2 + (p.y- self.y)**2 + (p.z- self.z)**2)
+        return d
 
         
 def main(args=None):
