@@ -36,10 +36,6 @@ class OffboardControl(Node):
         timer_period = 0.1  # 100 milliseconds
         self.timer_ = self.create_timer(timer_period, self.timer_callback)
 
-        self.radius = 5
-        self.omega = 0.5
-        self.theta = 0.0
-        self.dt = timer_period
         self.land_to_initial_position = False
 
         # Vehicle position
@@ -53,7 +49,7 @@ class OffboardControl(Node):
         p2 = Point(1.0, 0.0, -1.0)
         self.point_list = [p0, p1, p2]
         self.n = len(self.point_list)
-        self.range = 0.05 # 5 cm
+        self.range = 0.1 # 10 cm
         self.end = False
         self.i = 0
         self.temp = 0
@@ -85,6 +81,7 @@ class OffboardControl(Node):
             self.temp += 1
             
         if(abs(self.z) <= self.range and self.temp == 2):
+            self.get_logger().info("Final position: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
             self.disarm()
             self.temp += 1
 
@@ -108,7 +105,7 @@ class OffboardControl(Node):
 
     # Land to initial position
     def land_to_initial_pos(self):
-        self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LAND, 0.0, 0.0, 0.0, np.pi, 0.0, 0.0, 0.0)
+        self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_RETURN_TO_LAUNCH)
         self.get_logger().info("Landing to initial position")   
 
     '''
@@ -186,7 +183,11 @@ class OffboardControl(Node):
         self.x = msg.x
         self.y = msg.y
         self.z = msg.z
-    
+        vx = msg.vx
+        vy = msg.vy
+        vz = msg.vz
+        #self.get_logger().info("Actual velocity: ({:.2f}, {:.2f}, {:.2f})".format(vx, vy, vz))
+
     def distance(self, p):
         d = np.sqrt((p.x- self.x)**2 + (p.y- self.y)**2 + (p.z- self.z)**2)
         return d
