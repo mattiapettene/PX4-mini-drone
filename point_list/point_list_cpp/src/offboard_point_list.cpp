@@ -8,6 +8,7 @@
 #include <px4_msgs/msg/vehicle_command.hpp>
 #include <px4_msgs/msg/vehicle_status.hpp>
 #include <px4_msgs/msg/vehicle_local_position.hpp>
+#include <px4_msgs/msg/vehicle_constraints.hpp>
 
 #include <rclcpp/rclcpp.hpp>
 #include <chrono>
@@ -91,6 +92,7 @@ public:
 		offboard_control_mode_publisher_ = this->create_publisher<OffboardControlMode>("/fmu/in/offboard_control_mode", qos);
 		trajectory_setpoint_publisher_ = this->create_publisher<TrajectorySetpoint>("/fmu/in/trajectory_setpoint", qos);
 		vehicle_command_publisher_ = this->create_publisher<VehicleCommand>("/fmu/in/vehicle_command", qos);
+		vehicle_constraints_publisher_ = this->create_publisher<VehicleConstraints>("/fmu/in/vehicle_constraints", qos);
 
 		/**
 		 * @brief Set default variable
@@ -101,6 +103,8 @@ public:
 		 * @brief Timer callback
 		*/
 		auto timer_callback = [this]() -> void {
+
+			this->publish_velocity_constraints();
 
 			if (offboard_setpoint_counter_ == 10) {
 				// Change to publish command mode after 10 setpoints
@@ -113,7 +117,7 @@ public:
 			if(point_list.size() > this->index){
 				publish_offboard_control_mode();
 				publish_trajectory(this->point_list);
-				if(point_list.size() == this->index) this->flag_to_land = offboard_setpoint_counter_ + 50;
+				if(point_list.size() == this->index) this->flag_to_land = offboard_setpoint_counter_ + 5;
 			} else if(offboard_setpoint_counter_ == this->flag_to_land && offboard_setpoint_counter_ > 0) {
 				
 				this->publish_vehicle_command(VehicleCommand::VEHICLE_CMD_DO_SET_MODE, 1, 6);
@@ -123,7 +127,7 @@ public:
 				// Disarm
 				this->disarm();
 
-				this->flag_to_shutdown = offboard_setpoint_counter_ + 100;
+				this->flag_to_shutdown = offboard_setpoint_counter_ + 50;
 			}
 			
 
@@ -165,7 +169,7 @@ private:
 	rclcpp::Publisher<OffboardControlMode>::SharedPtr offboard_control_mode_publisher_;
 	rclcpp::Publisher<TrajectorySetpoint>::SharedPtr trajectory_setpoint_publisher_;
 	rclcpp::Publisher<VehicleCommand>::SharedPtr vehicle_command_publisher_;
-
+	rclcpp::Publisher<VehicleConstraints>::SharedPtr vehicle_constraints_publisher_;
 	/**
 	 * @brief Subscriber
 	*/
@@ -175,8 +179,8 @@ private:
 	/**
 	 * @brief Points list
 	*/
-	offboard_point_list* point_1 = new offboard_point_list(0.,0.,-1.,-M_PI);
-	offboard_point_list* point_2 = new offboard_point_list(1.,0.,-1.,-M_PI);
+	offboard_point_list* point_1 = new offboard_point_list(0.,0.,-1.,-M_PI_2);
+	offboard_point_list* point_2 = new offboard_point_list(1.,0.,-1.,-M_PI_2);
 	std::vector<offboard_point_list *> point_list;
 
 	void publish_offboard_control_mode();
@@ -185,6 +189,7 @@ private:
 	void vehicle_position_callback(const VehicleLocalPosition & msg);
 	void publish_trajectory_setpoint(offboard_point_list* point);
 	void publish_trajectory(std::vector<offboard_point_list *> point_list);
+	void publish_velocity_constraints();
 };
 
 /**
@@ -242,6 +247,18 @@ void OffboardControl::publish_offboard_control_mode()
 	msg.body_rate = false;
 	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
 	offboard_control_mode_publisher_->publish(msg);
+}
+
+/**
+ * @brief Publish the velocity constraints
+ */
+void OffboardControl::publish_velocity_constraints()
+{
+	VehicleConstraints msg{};
+	msg.speed_up = 0.1;
+	msg.speed_down = 0.1;
+	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
+	vehicle_constraints_publisher_->publish(msg);
 }
 
 /**
