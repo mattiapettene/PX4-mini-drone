@@ -1,4 +1,3 @@
-
 # ROS2 package creation
 
 ## Create a package

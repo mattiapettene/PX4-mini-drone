@@ -24,7 +24,7 @@ export LANG=en_US.UTF-8
 locale  # verify settings
 ```
 
-Setip Sources
+Setup Sources
 
 ``` bash
 sudo apt install software-properties-common

@@ -5,4 +5,4 @@
 - [Giacomo Corradini](https://github.com/GiacomoCorradini)
 - [Mattia Pettene](https://github.com/mattiapettene)
 
-## [Toolchain installation](docs/tollchain_installation.md)
+## [Toolchain installation](docs/toolchain_installation.md)
