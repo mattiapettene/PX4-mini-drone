@@ -30,4 +30,16 @@ make px4_sitl gazebo
 
 ## Build the code for hardware in the loop simulation (HITL)
 
-To build the code for a specific target
+To build the code for a specific target:
+
+``` make
+cd ~/PX4-Autopilot
+make px4_fmu-v5_default
+```
+
+Then upload the firmware to the autopilot, remember to plug in the autopilot
+
+``` make
+cd ~/PX4-Autopilot
+make px4_fmu-v5_default upload
+```

@@ -156,7 +156,28 @@ git clone https://github.com/PX4/px4_msgs.git
 colcon build
 ```
 
-### Install micro-ROS agent
+### PX4-FastDDS Bridge
+
+PX4 uses XRCE-DDS middleware to allow uORB messages to be published and subscribed on a companion computer as though they were ROS 2 topics.
+
+XRCE-DDS middleware can be installed in two different ways:
+
+1. **[Install MicroXRCE agent](https://micro-xrce-dds.docs.eprosima.com/en/stable/agent.html)**
+
+``` bash
+git clone https://github.com/eProsima/Micro-XRCE-DDS-Agent.git
+cd Micro-XRCE-DDS-Agent
+colcon build
+```
+
+- Try running the agent
+
+``` bash
+source install/local_setup.sh
+MicroXRCEAgent udp4 --port 8888
+```
+
+2. **[Install micro-ROS agent](https://micro.ros.org/)** *(Preferable)*
 
 - Ensure your ROS_DISTRO environment variable is set
 
