@@ -1,5 +1,6 @@
 import rclpy
 import numpy as np
+import math
 from rclpy.node import Node
 from rclpy.clock import Clock
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy, QoSDurabilityPolicy
@@ -8,6 +9,7 @@ from px4_msgs.msg import OffboardControlMode
 from px4_msgs.msg import TrajectorySetpoint
 from px4_msgs.msg import VehicleCommand
 from px4_msgs.msg import VehicleLocalPosition
+from px4_msgs.msg import VehicleStatus
 
 
 class OffboardControl(Node):
@@ -24,6 +26,8 @@ class OffboardControl(Node):
 
         self.vehicle_local_position_subscriber_ = self.create_subscription(VehicleLocalPosition, 
                                                                        "/fmu/out/vehicle_local_position", self.get_vehicle_position, qos_profile)
+        self.vehicle_status_subscriber_ = self.create_subscription(VehicleStatus, 
+                                                                       "/fmu/out/vehicle_status", self.get_vehicle_status, qos_profile)
         self.offboard_control_mode_publisher_ = self.create_publisher(OffboardControlMode,
                                                                         "/fmu/in/offboard_control_mode", qos_profile)
         self.trajectory_setpoint_publisher_ = self.create_publisher(TrajectorySetpoint,
@@ -37,6 +41,7 @@ class OffboardControl(Node):
         self.timer_ = self.create_timer(timer_period, self.timer_callback)
 
         self.land_to_initial_position = False
+        self.status = 0
 
         # Vehicle position
         self.x = 0.0
@@ -44,59 +49,77 @@ class OffboardControl(Node):
         self.z = 0.0
 
         # Point list definition
-        p0 = Point(0.0, 0.0, 0.0)
-        p1 = Point(0.0, 0.0, -1.0)
-        p2 = Point(1.0, 0.0, -1.0)
-        self.point_list = [p0, p1, p2]
+        p1 = Point(0.0, 0.0, -2.5)
+        p2 = Point(3.0, 0.0, -2.5)
+        self.point_list = [p1, p2]
         self.n = len(self.point_list)
-        self.range = 0.1 # 10 cm
+        self.range = 0.3 # 30 cm
         self.end = False
         self.i = 0
         self.temp = 0
+        self.takeoff_finished = 0
 
 
     def timer_callback(self):
-        if (self.offboard_setpoint_counter_ == 10):
-            # Change to Offboard mode after 10 setpoints
-            self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_DO_SET_MODE, 1., 6.)
+
+        # Arm and takeoff
+        if (self.offboard_setpoint_counter_ == 0):
 
             #Print initial position
             self.get_logger().info("Initial position: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
 
-            # Arm the vehicle
+            # Arm the vehicle and takeoff
             self.arm()
+            self.takeoff()         
 
-        if (self.offboard_setpoint_counter_ >= 10 and self.i < self.n):
-            # Offboard_control_mode needs to be paired with trajectory_setpoint
+        # Check takeoff finished
+        if (self.offboard_setpoint_counter_ >= 10 and self.status == 4 and self.takeoff_finished == 0):
+            self.get_logger().info("Takeoff completed")
+            self.takeoff_finished = 1
+        
+        # Trajectory setpoint
+        if (self.takeoff_finished == 1 and self.i < self.n and self.temp < 1):
+            self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_DO_SET_MODE, 1., 6.)
             self.publish_offboard_control_mode()
             self.publish_trajectory_setpoint()
 
+        # Land
         if(self.end == True and self.temp == 1):
+
             if(self.land_to_initial_position == False):
                 self.land()
             else:
                 self.land_to_initial_pos()
-                self.get_logger().info("Landing to initial position")
             
             self.temp += 1
-            
+        
+        # Disarm
         if(abs(self.z) <= self.range and self.temp == 2):
             self.get_logger().info("Final position: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
             self.disarm()
             self.temp += 1
-
 
         self.offboard_setpoint_counter_ += 1
 
     # Arm the vehicle
     def arm(self):
         self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_COMPONENT_ARM_DISARM, 1.0)
-        self.get_logger().info("Arm command send")
+        self.get_logger().info("Arm command sent")
 
     # Disarm the vehicle
     def disarm(self):
         self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_COMPONENT_ARM_DISARM, 0.0)
-        self.get_logger().info("Disarm command send")
+        self.get_logger().info("Disarm command sent")
+    
+    # Takeoff
+    def takeoff(self):
+        self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_TAKEOFF, math.nan, math.nan, math.nan, math.nan, math.nan, math.nan, 3.0)
+        self.get_logger().info("Takeoff command sent")
+
+    # Loiter
+    def loiter(self):
+        self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LOITER_TIME, 5.0)
+        self.get_logger().info("Loitering around mission")
 
     # Land
     def land(self):
@@ -135,7 +158,6 @@ class OffboardControl(Node):
         point = self.point_list
         range = self.range
 
-        
         if(self.distance(point[self.i]) <= range):
             if self.i < self.n - 1:
                 self.get_logger().info("Position reached: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
@@ -148,7 +170,7 @@ class OffboardControl(Node):
 
         
         msg.position = [point[self.i].x, point[self.i].y, point[self.i].z]
-        msg.yaw = 0.0 
+        #msg.yaw = 0.0 
 
         msg.timestamp = int(Clock().now().nanoseconds / 1000) # time in microseconds
         self.trajectory_setpoint_publisher_.publish(msg)
@@ -183,10 +205,15 @@ class OffboardControl(Node):
         self.x = msg.x
         self.y = msg.y
         self.z = msg.z
+        #self.get_logger().info("Actual velocity: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
         vx = msg.vx
         vy = msg.vy
         vz = msg.vz
         #self.get_logger().info("Actual velocity: ({:.2f}, {:.2f}, {:.2f})".format(vx, vy, vz))
+
+    def get_vehicle_status(self, msg):
+        self.status = msg.nav_state
+        #print("status = ", self.status)
 
     def distance(self, p):
         d = np.sqrt((p.x- self.x)**2 + (p.y- self.y)**2 + (p.z- self.z)**2)
