@@ -48,12 +48,14 @@ class OffboardControl(Node):
         self.y = 0.0
         self.z = 0.0
 
-        # Point list definition
-        p1 = Point(0.0, 0.0, -2.5)
-        p2 = Point(3.0, 0.0, -2.5)
-        self.point_list = [p1, p2]
-        self.n = len(self.point_list)
-        
+        # Point to be reached (m)
+        self.p = Point(3.0, 0.0, -2.5)
+
+        # Velocity control (m/s)
+        self.velx = 0.5
+        self.vely = 0.0
+        self.velz = 0.0
+
         self.range = 0.3 # 30 cm
         self.end = False
         self.i = 0
@@ -79,13 +81,18 @@ class OffboardControl(Node):
             self.takeoff_finished = 1
         
         # Trajectory setpoint
-        if (self.takeoff_finished == 1 and self.i < self.n and self.temp < 1):
+        if (self.takeoff_finished == 1 and self.end == False):
             self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_DO_SET_MODE, 1., 6.)
             self.publish_offboard_control_mode()
-            self.publish_trajectory_setpoint()
+            self.velocity_ctrl()
+
+        # Check x position reached
+        if(self.distance_x(self.p) <= self.range and self.end == False):
+            self.get_logger().info("Desidered x position reached")
+            self.end = True
 
         # Land
-        if(self.end == True and self.temp == 1):
+        if(self.end == True and self.temp == 0):
 
             if(self.land_to_initial_position == False):
                 self.land()
@@ -95,12 +102,13 @@ class OffboardControl(Node):
             self.temp += 1
         
         # Disarm
-        if(abs(self.z) <= self.range and self.temp == 2):
+        if(abs(self.z) <= self.range and self.temp == 1):
             self.get_logger().info("Final position: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
             self.disarm()
             self.temp += 1
 
         self.offboard_setpoint_counter_ += 1
+        
 
     # Arm the vehicle
     def arm(self):
@@ -154,22 +162,12 @@ class OffboardControl(Node):
 	vehicle hover at 5 meters with a yaw angle of 180 degrees.
     '''
 
-    def publish_trajectory_setpoint(self):
+    def velocity_ctrl(self):
         msg = TrajectorySetpoint()
-        point = self.point_list
-        range = self.range
 
-        if(self.distance(point[self.i]) <= range):
-            if self.i < self.n - 1:
-                self.get_logger().info("Position reached: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
-                self.i += 1
-            elif(self.temp<1):
-                self.end = True
-                self.temp = 1
-                self.get_logger().info("Position reached: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
+        msg.position = [math.nan, math.nan, math.nan]
+        msg.velocity = [self.velx, self.vely, self.velz]
         
-
-        msg.position = [point[self.i].x, point[self.i].y, point[self.i].z]
         #msg.yaw = 0.0 
 
         msg.timestamp = int(Clock().now().nanoseconds / 1000) # time in microseconds
@@ -191,7 +189,7 @@ class OffboardControl(Node):
         msg.param5 = param5
         msg.param6 = param6
         msg.param7 = param7
-        msg.command = command  # command ID
+        msg.command = command   # command ID
         msg.target_system = 1  # system which should execute the command
         msg.target_component = 1  # component which should execute the command, 0 for all components
         msg.source_system = 1  # system sending the command
@@ -205,7 +203,7 @@ class OffboardControl(Node):
         self.x = msg.x
         self.y = msg.y
         self.z = msg.z
-        #self.get_logger().info("Actual velocity: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
+        #self.get_logger().info("Actual position: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
         vx = msg.vx
         vy = msg.vy
         vz = msg.vz
@@ -213,10 +211,10 @@ class OffboardControl(Node):
 
     def get_vehicle_status(self, msg):
         self.status = msg.nav_state
-        print("status = ", self.status)
+        #print("status = ", self.status)
 
-    def distance(self, p):
-        d = np.sqrt((p.x- self.x)**2 + (p.y- self.y)**2 + (p.z- self.z)**2)
+    def distance_x(self, p):
+        d = np.sqrt((p.x- self.x)**2)
         return d
 
         

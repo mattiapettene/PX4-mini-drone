@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'point_list_py = point_list_py.point_list:main',
+            'vel_ctrl = point_list_py.vel_ctrl:main',
         ],
     },
 )
