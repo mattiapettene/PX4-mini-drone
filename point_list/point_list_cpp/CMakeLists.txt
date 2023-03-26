@@ -15,10 +15,15 @@ find_package(std_msgs REQUIRED)
 find_package(px4_msgs REQUIRED)
 find_package(px4_ros_com REQUIRED)
 
-# offboard_point_list.cpp
-add_executable(offboard_point_list src/offboard_point_list.cpp)
-ament_target_dependencies(offboard_point_list rclcpp std_msgs px4_msgs px4_ros_com) 
-install(TARGETS offboard_point_list DESTINATION lib/${PROJECT_NAME})
+# offboard_point_ctrl.cpp
+add_executable(offboard_point_ctrl src/offboard_point_ctrl.cpp)
+ament_target_dependencies(offboard_point_ctrl rclcpp std_msgs px4_msgs px4_ros_com) 
+install(TARGETS offboard_point_ctrl DESTINATION lib/${PROJECT_NAME})
+
+# offboard_velocity_ctrl.cpp
+add_executable(offboard_velocity_ctrl src/offboard_velocity_ctrl.cpp)
+ament_target_dependencies(offboard_velocity_ctrl rclcpp std_msgs px4_msgs px4_ros_com) 
+install(TARGETS offboard_velocity_ctrl DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

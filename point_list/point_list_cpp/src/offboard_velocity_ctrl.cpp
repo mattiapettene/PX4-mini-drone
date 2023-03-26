@@ -1,7 +1,3 @@
-/**
- * @author Corradini Giacomo
-*/
-
 #include <px4_msgs/msg/offboard_control_mode.hpp>
 #include <px4_msgs/msg/vehicle_control_mode.hpp>
 #include <px4_msgs/msg/trajectory_setpoint.hpp>
@@ -19,31 +15,6 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
-
-class offboard_point_list
-{
-
-public:
-	float position_x; 
-	float position_y; 
-	float position_z; 
-	float position_yaw;
-
-	offboard_point_list(float position_x, float position_y, float position_z, float position_yaw);
-	~offboard_point_list();
-};
-
-offboard_point_list::offboard_point_list(float position_x, float position_y, float position_z, float position_yaw)
-{
-	this->position_x   = position_x; 
-	this->position_y   = position_y; 
-	this->position_z   = position_z; 
-	this->position_yaw = position_yaw;
-}
-
-offboard_point_list::~offboard_point_list()
-{
-}
 
 float distance(float x1, float y1, float z1, float x2, float y2, float z2)
 {
@@ -64,11 +35,6 @@ class OffboardControl : public rclcpp::Node
 public:
 	OffboardControl() : Node("offboard_control")
 	{
-		/**
-		 * @brief add points to point list
-		*/
-		this->point_list.push_back(this->point_1);
-		this->point_list.push_back(this->point_2);
 
 		/**
 		 * @brief quality of service
@@ -108,9 +74,6 @@ public:
 			this->publish_velocity_constraints();
 
 			if (offboard_setpoint_counter_ == 10) {
-				// Change to publish command mode after 10 setpoints
-				this->publish_vehicle_command(VehicleCommand::VEHICLE_CMD_DO_SET_MODE, 1, 6);
-
 				// Arm the vehicle
 				this->takeoff();
 				this->arm();
@@ -118,23 +81,17 @@ public:
 
 			check_takeoff();
 	
-			if(point_list.size() > this->index && this->flag_takeoff == 1){
-				this->publish_vehicle_command(VehicleCommand::VEHICLE_CMD_DO_SET_MODE, 1, 6);
+			if(this->flag_takeoff == 1 && offboard_setpoint_counter_ < 190){
 				publish_offboard_control_mode();
-				publish_trajectory(this->point_list);
-				if(point_list.size() == this->index) this->flag_to_land = offboard_setpoint_counter_ + 5;
-			} else if(offboard_setpoint_counter_ == this->flag_to_land && offboard_setpoint_counter_ > 0) {
-				
-				this->publish_vehicle_command(VehicleCommand::VEHICLE_CMD_DO_SET_MODE, 1, 6);
-				
-				this->land_to_launch();
-
+				publish_velocity_setpoint(0.5,0.,0.,0.);
+				this->flag_to_land = offboard_setpoint_counter_ + 10;
+			} else if(offboard_setpoint_counter_ == this->flag_to_land && offboard_setpoint_counter_ > 0) {	
 				// Disarm
+				this->land();
 				this->disarm();
 
-				this->flag_to_shutdown = offboard_setpoint_counter_ + 50;
+				this->flag_to_shutdown = offboard_setpoint_counter_ + 80;
 			}
-			
 
 			if(offboard_setpoint_counter_ == this->flag_to_shutdown && offboard_setpoint_counter_ > 0) rclcpp::shutdown();
 
@@ -151,7 +108,6 @@ public:
 	void land_to_launch();
 	void takeoff();
 
-
 private:
 
 	/**
@@ -162,13 +118,10 @@ private:
 	uint64_t offboard_setpoint_counter_; //!< counter for the number of setpoints sent
 	uint64_t flag_to_shutdown = 0;
 	uint64_t flag_to_land = 0;
-	size_t index = 0;
 	float tolerance = 0.30;              // tolerance
 	float takeoff_height = -2.5;		 // default height for the takeoff
 	uint flag_takeoff = 0;
 	uint8_t nav_state;
-
-
 
 	/**
 	 * @brief messages
@@ -188,19 +141,11 @@ private:
 	rclcpp::Subscription<VehicleStatus>::SharedPtr vehicle_status_sub_;
 	rclcpp::Subscription<VehicleLocalPosition>::SharedPtr vehicle_position_sub_;
 
-	/**
-	 * @brief Points list
-	*/
-	offboard_point_list* point_1 = new offboard_point_list(0.,0.,-1.,-M_PI_2);
-	offboard_point_list* point_2 = new offboard_point_list(1.,0.,-1.,-M_PI_2);
-	std::vector<offboard_point_list *> point_list;
-
 	void publish_offboard_control_mode();
 	void publish_vehicle_command(uint16_t command, float param1 = std::nanf(""), float param2 = std::nanf(""), float param3 = std::nanf(""), float param4 = std::nanf(""), float param5 = std::nanf(""), float param6 = std::nanf(""), float param7 = std::nanf(""));
 	void vehicle_status_callback(const VehicleStatus & msg);
 	void vehicle_position_callback(const VehicleLocalPosition & msg);
-	void publish_trajectory_setpoint(offboard_point_list* point);
-	void publish_trajectory(std::vector<offboard_point_list *> point_list);
+	void publish_velocity_setpoint(float x_dot, float y_dot, float z_dot, float yaw_dot);
 	void publish_velocity_constraints();
 	void check_takeoff();
 };
@@ -255,7 +200,6 @@ void OffboardControl::land_to_launch()
 	RCLCPP_INFO(this->get_logger(), "Land to launch position command send");
 }
 
-
 /**
  * @brief Publish the offboard control mode.
  *        For this example, only position and altitude controls are active.
@@ -263,10 +207,10 @@ void OffboardControl::land_to_launch()
 void OffboardControl::publish_offboard_control_mode()
 {
 	OffboardControlMode msg{};
-	msg.position = true;
-	msg.velocity = false;
+	msg.position = false;
+	msg.velocity = true;
 	msg.acceleration = false;
-	msg.attitude = true;
+	msg.attitude = false;
 	msg.body_rate = false;
 	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
 	offboard_control_mode_publisher_->publish(msg);
@@ -278,22 +222,22 @@ void OffboardControl::publish_offboard_control_mode()
 void OffboardControl::publish_velocity_constraints()
 {
 	VehicleConstraints msg{};
-	msg.speed_up = 0.1;
-	msg.speed_down = 0.1;
+	msg.speed_up = 0.8;
+	msg.speed_down = 0.8;
 	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
 	vehicle_constraints_publisher_->publish(msg);
 }
 
 /**
  * @brief Publish vehicle commands
- * @param command   Command code (matches VehicleCommand and MAVLink MAV_CMD codes)
- * @param param1    Command parameter 1
- * @param param2    Command parameter 2
- * @param param3    Command parameter 3
- * @param param4    Command parameter 4
- * @param param5    Command parameter 5
- * @param param6    Command parameter 6
- * @param param7    Command parameter 7
+ * @param command Command code (matches VehicleCommand and MAVLink MAV_CMD codes)
+ * @param param1  Command parameter 1
+ * @param param2  Command parameter 2
+ * @param param3  Command parameter 3
+ * @param param4  Command parameter 4
+ * @param param5  Command parameter 5
+ * @param param6  Command parameter 6
+ * @param param7  Command parameter 7
  */
 void OffboardControl::publish_vehicle_command(uint16_t command, float param1, float param2, float param3, float param4, float param5, float param6, float param7)
 {
@@ -322,7 +266,7 @@ void OffboardControl::vehicle_status_callback(const VehicleStatus & msg)
 {
 	this->nav_state = msg.nav_state;
 	fprintf(stdout, "\n---------------------------------------------------------------------------\n");
-	RCLCPP_INFO(this->get_logger(), "\n\nArming state: %i, Navigation state: %i\n\n", msg.arming_state, msg.nav_state);
+	RCLCPP_INFO(this->get_logger(), "\nArming state: %i, Navigation state: %i\n", msg.arming_state, msg.nav_state);
 	fprintf(stdout, "\n---------------------------------------------------------------------------\n");
 }
 
@@ -339,39 +283,34 @@ void OffboardControl::vehicle_position_callback(const VehicleLocalPosition & msg
 /**
  * @brief Publish a setpoint
  */
-void OffboardControl::publish_trajectory_setpoint(offboard_point_list* point)
+void OffboardControl::publish_velocity_setpoint(float x_dot, float y_dot, float z_dot, float yaw_dot)
 {
 	TrajectorySetpoint msg{};
 	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
-	msg.position[0] = point->position_x;
-	msg.position[1] = point->position_y;
-	msg.position[2] = point->position_z;
-	msg.yaw = point->position_yaw;
+	msg.position[0] = std::nanf("");
+	msg.position[1] = std::nanf("");
+	msg.position[2] = std::nanf("");
+	msg.yaw = std::nanf("");
+	msg.velocity[0] = x_dot;
+	msg.velocity[1] = y_dot;
+	msg.velocity[2] = z_dot;
+	msg.yawspeed = yaw_dot;
 	trajectory_setpoint_publisher_->publish(msg);
 }
 
 /**
- * @brief Pulblish a trajectory set points
-*/
-void OffboardControl::publish_trajectory(std::vector<offboard_point_list *> point_list)
-{
-	float dist = distance(this->message.x, this->message.y, this->message.z, point_list[this->index]->position_x, point_list[this->index]->position_y, point_list[this->index]->position_z);
-	
-	if(dist > this->tolerance){
-		this->publish_trajectory_setpoint(point_list[this->index]);
-		//RCLCPP_INFO(this->get_logger(), "Distance %f, index %ld\n", dist, this->index);
-	} else if (dist <= this->tolerance){
-		this->index++;
-	}
-}
-
+ * @brief check if takeoff is completed
+ */
 void OffboardControl::check_takeoff(){
 	
 	float dist = distance(this->message.x, this->message.y, this->message.z, 0, 0, this->takeoff_height);
 	
-	if(dist < this->tolerance && this->nav_state == 4) this->flag_takeoff = 1;
+	if(dist < this->tolerance && this->nav_state == 4 && this->flag_takeoff == 0){
+		this->flag_takeoff = 1;
+		RCLCPP_INFO(this->get_logger(), "\n****Takeoff done!!****\n");
+		this->publish_vehicle_command(VehicleCommand::VEHICLE_CMD_DO_SET_MODE, 1, 6);
+	}
 }
-
 
 /**
  * @brief main
