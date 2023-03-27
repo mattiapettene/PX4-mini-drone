@@ -81,7 +81,7 @@ public:
 
 			check_takeoff();
 	
-			if(this->flag_takeoff == 1 && offboard_setpoint_counter_ < 190){
+			if(this->flag_takeoff == 1 && distance(this->message.x, 0., 0., 2., 0., 0.) > this->tolerance){
 				publish_offboard_control_mode();
 				publish_velocity_setpoint(0.5,0.,0.,0.);
 				this->flag_to_land = offboard_setpoint_counter_ + 10;
@@ -266,7 +266,7 @@ void OffboardControl::vehicle_status_callback(const VehicleStatus & msg)
 {
 	this->nav_state = msg.nav_state;
 	fprintf(stdout, "\n---------------------------------------------------------------------------\n");
-	RCLCPP_INFO(this->get_logger(), "\nArming state: %i, Navigation state: %i\n", msg.arming_state, msg.nav_state);
+	RCLCPP_INFO(this->get_logger(), "\nArming state: %i, Navigation state: %i\n", msg.arming_state, msg.nav_state);	
 	fprintf(stdout, "\n---------------------------------------------------------------------------\n");
 }
 
