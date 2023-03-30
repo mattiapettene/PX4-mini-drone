@@ -213,7 +213,7 @@ class OffboardControl(Node):
 
     def get_vehicle_status(self, msg):
         self.status = msg.nav_state
-        print("status = ", self.status)
+        #print("status = ", self.status)
 
     def distance(self, p):
         d = np.sqrt((p.x- self.x)**2 + (p.y- self.y)**2 + (p.z- self.z)**2)

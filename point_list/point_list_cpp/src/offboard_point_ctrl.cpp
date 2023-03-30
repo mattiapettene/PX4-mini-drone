@@ -326,8 +326,8 @@ void OffboardControl::vehicle_status_callback(const VehicleStatus & msg)
 void OffboardControl::vehicle_position_callback(const VehicleLocalPosition & msg)
 {	
 	this->message = msg;
-	//RCLCPP_INFO(this->get_logger(),"\nX: %f\nY: %f\nZ: %f", message.x, message.y, message.z);
-	//RCLCPP_INFO(this->get_logger(),"\nVX: %f\nVY: %f\nVZ: %f", message.vx, message.vy, message.vz);
+	RCLCPP_INFO(this->get_logger(),"\nX: %f\nY: %f\nZ: %f", message.x, message.y, message.z);
+	RCLCPP_INFO(this->get_logger(),"\nVX: %f\nVY: %f\nVZ: %f", message.vx, message.vy, message.vz);
 }
 
 /**
