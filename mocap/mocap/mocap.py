@@ -25,18 +25,23 @@ class OffboardControl(Node):
             depth=1
         )
 
+        # subscriber
         self.vehicle_odometry_subscriber_ = self.create_subscription(VehicleOdometry, 
-                                                                       "/fmu/out/vehicle_odometry", self.vehicle_odometry, qos_profile)
+                                                                        "/fmu/out/vehicle_odometry", self.vehicle_odometry, qos_profile)
         self.vehicle_local_position_subscriber_ = self.create_subscription(VehicleLocalPosition, 
-                                                                       "/fmu/out/vehicle_local_position", self.get_vehicle_position, qos_profile)
+                                                                        "/fmu/out/vehicle_local_position", self.get_vehicle_position, qos_profile)
         self.vehicle_status_subscriber_ = self.create_subscription(VehicleStatus, 
-                                                                       "/fmu/out/vehicle_status", self.get_vehicle_status, qos_profile)
+                                                                        "/fmu/out/vehicle_status", self.get_vehicle_status, qos_profile)
+        
+        # publisher
         self.offboard_control_mode_publisher_ = self.create_publisher(OffboardControlMode,
                                                                         "/fmu/in/offboard_control_mode", qos_profile)
         self.trajectory_setpoint_publisher_ = self.create_publisher(TrajectorySetpoint,
-                                                                    "/fmu/in/trajectory_setpoint", qos_profile)
+                                                                        "/fmu/in/trajectory_setpoint", qos_profile)
         self.vehicle_command_publisher_ = self.create_publisher(VehicleCommand, 
-                                                                "/fmu/in/vehicle_command", qos_profile)
+                                                                        "/fmu/in/vehicle_command", qos_profile)
+        self.vehicle_mocap_publisher_ = self.create_publisher(VehicleOdometry, 
+                                                                        "/fmu/in/vehicle_mocap_odometry", qos_profile)
         
         self.offboard_setpoint_counter_ = 0
 
@@ -57,8 +62,8 @@ class OffboardControl(Node):
         self.z_mocap = 0.0
 
         # Point list definition
-        p1 = Point(0.0, 0.0, -2.5)
         p2 = Point(3.0, 0.0, -2.5)
+        p1 = Point(0.0, 0.0, -2.5)
         self.point_list = [p1, p2]
         self.n = len(self.point_list)
         
@@ -154,7 +159,7 @@ class OffboardControl(Node):
         msg.body_rate = False
         msg.timestamp = int(Clock().now().nanoseconds / 1000) # time in microseconds
         self.offboard_control_mode_publisher_.publish(msg)
-        
+
 
     '''
 	Publish a trajectory setpoint
