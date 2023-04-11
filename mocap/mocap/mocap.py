@@ -10,6 +10,7 @@ from px4_msgs.msg import TrajectorySetpoint
 from px4_msgs.msg import VehicleCommand
 from px4_msgs.msg import VehicleLocalPosition
 from px4_msgs.msg import VehicleStatus
+from px4_msgs.msg import VehicleOdometry
 
 
 class OffboardControl(Node):
@@ -24,6 +25,8 @@ class OffboardControl(Node):
             depth=1
         )
 
+        self.vehicle_odometry_subscriber_ = self.create_subscription(VehicleOdometry, 
+                                                                       "/fmu/out/vehicle_odometry", self.vehicle_odometry, qos_profile)
         self.vehicle_local_position_subscriber_ = self.create_subscription(VehicleLocalPosition, 
                                                                        "/fmu/out/vehicle_local_position", self.get_vehicle_position, qos_profile)
         self.vehicle_status_subscriber_ = self.create_subscription(VehicleStatus, 
@@ -47,6 +50,11 @@ class OffboardControl(Node):
         self.x = 0.0
         self.y = 0.0
         self.z = 0.0
+
+        # Odometry position (m)
+        self.x_mocap = 0.0
+        self.y_mocap = 0.0
+        self.z_mocap = 0.0
 
         # Point list definition
         p1 = Point(0.0, 0.0, -2.5)
@@ -176,6 +184,7 @@ class OffboardControl(Node):
         self.trajectory_setpoint_publisher_.publish(msg)
 
 
+
     '''
     Publish vehicle commands
         command   Command code (matches VehicleCommand and MAVLink MAV_CMD codes)
@@ -205,11 +214,17 @@ class OffboardControl(Node):
         self.x = msg.x
         self.y = msg.y
         self.z = msg.z
-        #self.get_logger().info("Actual velocity: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
+        #self.get_logger().info("Actual position: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
         vx = msg.vx
         vy = msg.vy
         vz = msg.vz
         #self.get_logger().info("Actual velocity: ({:.2f}, {:.2f}, {:.2f})".format(vx, vy, vz))
+
+    def vehicle_odometry(self, msg):
+        self.x_mocap = msg.position[0]
+        self.y_mocap = msg.position[1]
+        self.z_mocap = msg.position[2]
+        #self.get_logger().info("Odometry position: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
 
     def get_vehicle_status(self, msg):
         self.status = msg.nav_state
