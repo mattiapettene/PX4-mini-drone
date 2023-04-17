@@ -18,6 +18,7 @@ class OffboardControl(Node):
     def __init__(self):
         super().__init__('OffboardControl')
 
+        # qualisty of service
         qos_profile = QoSProfile(
             reliability=QoSReliabilityPolicy.BEST_EFFORT,
             durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
@@ -43,8 +44,8 @@ class OffboardControl(Node):
         self.vehicle_mocap_publisher_ = self.create_publisher(VehicleOdometry, 
                                                                         "/fmu/in/vehicle_mocap_odometry", qos_profile)
         
-        self.offboard_setpoint_counter_ = 0
 
+        self.offboard_setpoint_counter_ = 0
         timer_period = 0.1  # 100 milliseconds
         self.timer_ = self.create_timer(timer_period, self.timer_callback)
 
@@ -145,11 +146,11 @@ class OffboardControl(Node):
         self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_RETURN_TO_LAUNCH)
         self.get_logger().info("Landing to initial position")   
 
+
     '''
 	Publish the offboard control mode.
 	For this example, only position and altitude controls are active.
     '''
-
     def publish_offboard_control_mode(self):
         msg = OffboardControlMode()
         msg.position = True
@@ -166,8 +167,8 @@ class OffboardControl(Node):
 	For this example, it sends a trajectory setpoint to make the
 	vehicle hover at 5 meters with a yaw angle of 180 degrees.
     '''
-
     def publish_trajectory_setpoint(self):
+        
         msg = TrajectorySetpoint()
         point = self.point_list
         range = self.range
@@ -188,6 +189,32 @@ class OffboardControl(Node):
         msg.timestamp = int(Clock().now().nanoseconds / 1000) # time in microseconds
         self.trajectory_setpoint_publisher_.publish(msg)
 
+    '''
+	Publish a trajectory setpoint
+	For this example, it sends a trajectory setpoint to make the
+	vehicle hover at 5 meters with a yaw angle of 180 degrees.
+    '''
+    def publish_trajectory_setpoint(self):
+        
+        msg = TrajectorySetpoint()
+        point = self.point_list
+        range = self.range
+
+        if(self.distance(point[self.i]) <= range):
+            if self.i < self.n - 1:
+                self.get_logger().info("Position reached: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
+                self.i += 1
+            elif(self.temp<1):
+                self.end = True
+                self.temp = 1
+                self.get_logger().info("Position reached: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
+        
+
+        msg.position = [point[self.i].x, point[self.i].y, point[self.i].z]
+        #msg.yaw = 0.0 
+
+        msg.timestamp = int(Clock().now().nanoseconds / 1000) # time in microseconds
+        self.trajectory_setpoint_publisher_.publish(msg)
 
 
     '''
@@ -238,7 +265,6 @@ class OffboardControl(Node):
     def distance(self, p):
         d = np.sqrt((p.x- self.x)**2 + (p.y- self.y)**2 + (p.z- self.z)**2)
         return d
-
         
 def main(args=None):
     rclpy.init(args=args)
@@ -254,11 +280,27 @@ def main(args=None):
 
 
 class Point:
+    
+    """
+        Store position of the drone as a point in 3D space
+    """
+
+
     def __init__(self, x, y, z):
         self.x = x
         self.y = y
         self.z = z
 
+    def set_point(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
 
+#   __  __    _    ___ _   _ 
+#  |  \/  |  / \  |_ _| \ | |
+#  | |\/| | / _ \  | ||  \| |
+#  | |  | |/ ___ \ | || |\  |
+#  |_|  |_/_/   \_\___|_| \_|
+                           
 if __name__ == '__main__':
     main()
