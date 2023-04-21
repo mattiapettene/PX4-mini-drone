@@ -170,7 +170,7 @@ class OffboardControl(Node):
         
 
         msg.position = [point[self.i].x, point[self.i].y, point[self.i].z]
-        #msg.yaw = 0.0 
+        msg.yaw = math.nan
 
         msg.timestamp = int(Clock().now().nanoseconds / 1000) # time in microseconds
         self.trajectory_setpoint_publisher_.publish(msg)
