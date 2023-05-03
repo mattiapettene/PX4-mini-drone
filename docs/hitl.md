@@ -10,6 +10,9 @@ First of all it is necessary to configure QGroundControl to enable the HITL mode
 - Enable HITL mode, openening <code> Setup > Safety </code>
 - Select the airframe, choosing Setup > Airframes > HIL Quadcopter
 - Calibrate the RC and enable it setting COM_RC_OVERRIDE = 3
+
+ADD PART TO DISABLE MAVLINK AND SET MICROXRCE
+
 Then close QGroundControl to proceed with the remaining setup.
 
 ### Companion board configuration
@@ -18,3 +21,22 @@ During the HITL simulation, the commands to the flight controller are sent by a 
 - Clone the repo with the script to be launched
 
 ## HITL simulation
+### Gazebo launch
+First of all make sure QGroundControl is closed. Then launch the following from a terminal: <br>
+``` 
+cd ~/PX4-Autopilot
+DONT_RUN=1 make px4_sitl_default gazebo-classic 
+source Tools/simulation/gazebo-classic/setup_gazebo.bash $(pwd) $(pwd)/build/px4_sitl_default
+gazebo Tools/simulation/gazebo-classic/sitl_gazebo-classic/worlds/hitl_iris.world
+```
+Only at this point it is possible to launch QGroundControl.
+
+### ROS2 launch
+On the companion board, launch ROS2:
+```
+source ~/microros_ws/install/local_setup.bash
+source install/local_setup.bash
+ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyS0 -b 921600 ROS_DOMAIN_ID=0
+```
+
+TO BE COMPLETED
