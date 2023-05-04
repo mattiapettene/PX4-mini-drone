@@ -1,6 +1,6 @@
 # Hardware-in-the-loop (HITL) simulation
 <br>
-Hardware-in-the-loop (HITL) is a simulation mode in which normal PX4 firmware is run on a real flight controller hardware. The flight controller hardware is connected to Gazebo Classic via USB/UART.ù
+Hardware-in-the-loop (HITL) is a simulation mode in which normal PX4 firmware is run on a real flight controller hardware. The flight controller hardware is connected to Gazebo Classic via USB/UART.
 
 ## HITL setup
 
@@ -10,8 +10,7 @@ First of all it is necessary to configure QGroundControl to enable the HITL mode
 - Enable HITL mode, openening <code> Setup > Safety </code>
 - Select the airframe, choosing Setup > Airframes > HIL Quadcopter
 - Calibrate the RC and enable it setting COM_RC_OVERRIDE = 3
-
-ADD PART TO DISABLE MAVLINK AND SET MICROXRCE
+- Make sure to disable all the MAVLink ports and set Micro XRCE to TELEM1, boudrate = 921600
 
 Then close QGroundControl to proceed with the remaining setup.
 
@@ -38,5 +37,4 @@ source ~/microros_ws/install/local_setup.bash
 source install/local_setup.bash
 ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyS0 -b 921600 ROS_DOMAIN_ID=0
 ```
-
-TO BE COMPLETED
+At this point, always on the companion board, it is possible to navigate to the folder where the scripts are contained and launch them in the same way as in the SITL simulation.
