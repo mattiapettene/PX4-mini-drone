@@ -35,30 +35,31 @@ class OffboardControl(Node):
         self.vehicle_command_publisher_ = self.create_publisher(VehicleCommand, 
                                                                 "/fmu/in/vehicle_command", qos_profile)
         
-        self.offboard_setpoint_counter_ = 0
 
         timer_period = 0.1  # 100 milliseconds
         self.timer_ = self.create_timer(timer_period, self.timer_callback)
 
+        self.offboard_setpoint_counter_ = 0
         self.land_to_initial_position = False
-        self.status = 0
+        self.print_position = False
+        self.print_velocity = False
+        self.print_status = False
 
-        # Vehicle position (m)
+        # Vehicle actual position (m)
         self.x = 0.0
         self.y = 0.0
         self.z = 0.0
 
-        # Point list definition
+        # Point list tajectory definition
         p1 = Point(0.0, 0.0, -2.5)
         p2 = Point(3.0, 0.0, -2.5)
         self.point_list = [p1, p2]
-        self.n = len(self.point_list)
         
-        self.range = 0.3 # 30 cm
-        self.end = False
-        self.i = 0
-        self.temp = 0
+        self.range = 0.3 # Set tolerance range to 30 cm
+
+        self.status = 0
         self.takeoff_finished = 0
+        self.landing_flag = 0 
 
 
     def timer_callback(self):
@@ -66,7 +67,7 @@ class OffboardControl(Node):
         # Arm and takeoff
         if (self.offboard_setpoint_counter_ == 0):
 
-            #Print initial position
+            # Print initial position
             self.get_logger().info("Initial position: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
 
             # Arm the vehicle and takeoff
@@ -79,28 +80,31 @@ class OffboardControl(Node):
             self.takeoff_finished = 1
         
         # Trajectory setpoint
-        if (self.takeoff_finished == 1 and self.i < self.n and self.temp < 1):
+        if (self.takeoff_finished == 1 and self.point_list):
             self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_DO_SET_MODE, 1., 6.)
             self.publish_offboard_control_mode()
             self.publish_trajectory_setpoint()
 
         # Land
-        if(self.end == True and self.temp == 1):
+        if(len(self.point_list) == 0 and self.landing_flag == 0):  # when the list is empty all points are reached
 
             if(self.land_to_initial_position == False):
                 self.land()
             else:
                 self.land_to_initial_pos()
             
-            self.temp += 1
+            self.landing_flag = 1
         
         # Disarm
-        if(abs(self.z) <= self.range and self.temp == 2):
+        if(abs(self.z) <= self.range and self.landing_flag == 1):
             self.get_logger().info("Final position: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
             self.disarm()
-            self.temp += 1
+            rclpy.shutdown()
 
         self.offboard_setpoint_counter_ += 1
+
+
+    # ------ FUNCTIONS -------                                                                    
 
     # Arm the vehicle
     def arm(self):
@@ -121,7 +125,7 @@ class OffboardControl(Node):
     def loiter(self):
         self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LOITER_TIME, 5.0)
         self.get_logger().info("Loitering around mission")
-
+    
     # Land
     def land(self):
         self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LAND)
@@ -132,11 +136,8 @@ class OffboardControl(Node):
         self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_RETURN_TO_LAUNCH)
         self.get_logger().info("Landing to initial position")   
 
-    '''
-	Publish the offboard control mode.
-	For this example, only position and altitude controls are active.
-    '''
 
+	# Publish the offboard control mode
     def publish_offboard_control_mode(self):
         msg = OffboardControlMode()
         msg.position = True
@@ -146,42 +147,29 @@ class OffboardControl(Node):
         msg.body_rate = False
         msg.timestamp = int(Clock().now().nanoseconds / 1000) # time in microseconds
         self.offboard_control_mode_publisher_.publish(msg)
-        
+    
 
-    '''
-	Publish a trajectory setpoint
-	For this example, it sends a trajectory setpoint to make the
-	vehicle hover at 5 meters with a yaw angle of 180 degrees.
-    '''
-
+	# Publish a trajectory setpoint
     def publish_trajectory_setpoint(self):
         msg = TrajectorySetpoint()
         point = self.point_list
         range = self.range
 
-        if(self.distance(point[self.i]) <= range):
-            if self.i < self.n - 1:
+        if len(point) > 0:   # check the list is not empty
+            
+            msg.position = [point[0].x, point[0].y, point[0].z]
+            msg.yaw = math.nan
+
+            if self.distance(point[0]) <= range:    # point is reached
                 self.get_logger().info("Position reached: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
-                self.i += 1
-            elif(self.temp<1):
-                self.end = True
-                self.temp = 1
-                self.get_logger().info("Position reached: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
-        
+                point.pop(0)    # delete the reached point from the list
+           
 
-        msg.position = [point[self.i].x, point[self.i].y, point[self.i].z]
-        msg.yaw = math.nan
+        msg.timestamp = int(Clock().now().nanoseconds / 1000)   # time in microseconds
+        self.trajectory_setpoint_publisher_.publish(msg) 
+     
 
-        msg.timestamp = int(Clock().now().nanoseconds / 1000) # time in microseconds
-        self.trajectory_setpoint_publisher_.publish(msg)
-
-
-    '''
-    Publish vehicle commands
-        command   Command code (matches VehicleCommand and MAVLink MAV_CMD codes)
-        param1    Command parameter 1 as defined by MAVLink uint16 VEHICLE_CMD enum
-        param2    Command parameter 2 as defined by MAVLink uint16 VEHICLE_CMD enum
-    '''
+    # Publish vehicle commands
     def publish_vehicle_command(self, command, param1=0.0, param2=0.0, param3=0.0, param4=0.0, param5=0.0, param6=0.0, param7=0.0):
         msg = VehicleCommand()
         msg.param1 = param1
@@ -200,26 +188,49 @@ class OffboardControl(Node):
         msg.timestamp = int(Clock().now().nanoseconds / 1000) # time in microseconds
         self.vehicle_command_publisher_.publish(msg)
 
+
+    # Get vehicle position and velocity
     def get_vehicle_position(self, msg):
-        # x, y, z are updated at each time step
         self.x = msg.x
         self.y = msg.y
         self.z = msg.z
-        #self.get_logger().info("Actual velocity: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
+        
+        if(self.print_position):
+            self.get_logger().info("Actual position: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
+            
         vx = msg.vx
         vy = msg.vy
         vz = msg.vz
-        #self.get_logger().info("Actual velocity: ({:.2f}, {:.2f}, {:.2f})".format(vx, vy, vz))
+        
+        if(self.print_velocity):
+            self.get_logger().info("Actual velocity: ({:.2f}, {:.2f}, {:.2f})".format(vx, vy, vz))
 
+
+    # Get vehicle status
     def get_vehicle_status(self, msg):
         self.status = msg.nav_state
-        #print("status = ", self.status)
+        
+        if(self.print_status):
+            self.get_logger().info("Actual status: {:d}".format(self.status))
 
+
+    # Distance between a point and the current position
     def distance(self, p):
         d = np.sqrt((p.x- self.x)**2 + (p.y- self.y)**2 + (p.z- self.z)**2)
         return d
 
-        
+
+
+
+# Define a class Point 
+class Point:
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+
+
 def main(args=None):
     rclpy.init(args=args)
     print("Starting offboard control node...\n")
@@ -227,17 +238,9 @@ def main(args=None):
     rclpy.spin(offboard_control)
 
     # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
     offboard_control.destroy_node()
     rclpy.shutdown()
 
-
-class Point:
-    def __init__(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z
 
 
 if __name__ == '__main__':
