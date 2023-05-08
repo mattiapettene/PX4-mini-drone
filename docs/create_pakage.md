@@ -17,7 +17,7 @@ At this point will be created a folder named <package_name> in the workspace. In
 
 - **Python project**
 
-  It is necessary to modify the setup.py file, compiling it adding:
+  It is necessary to modify the setup.py file, adding the following lines, in order to compile the project:
 
   ``` bash
   entry_points={
@@ -37,14 +37,26 @@ At this point will be created a folder named <package_name> in the workspace. In
     find_package(ament_cmake REQUIRED)
     # uncomment the following section in order to fill in
     # further dependencies manually.
-    # find_package(<dependency> REQUIRED)
+    # find_package(<dependency1> REQUIRED)
+    # find_package(<dependency1> REQUIRED)
     ```
-  
+
+    an example of the usual nedded packages:
+
+    ``` cmake
+    # find dependencies
+    find_package(ament_cmake REQUIRED)
+    find_package(rclcpp REQUIRED)
+    find_package(std_msgs REQUIRED)
+    find_package(px4_msgs REQUIRED)
+    find_package(px4_ros_com REQUIRED)
+    ```
+
   - Add the executable files
 
     ``` cmake
     add_executable(<executable_file> src/<executable_file>.cpp)
-    ament_target_dependencies(<executable_file> <dependencies1> <dependencies2>) 
+    ament_target_dependencies(<executable_file> <dependencie1> <dependencie2>) 
     install(TARGETS <executable_file> DESTINATION lib/${PROJECT_NAME})
     ```
   
