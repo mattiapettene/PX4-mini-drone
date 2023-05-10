@@ -4,4 +4,4 @@ gnome-terminal --tab --working-directory="$directory" -- bash -c "export ROS_DOM
 
 #PX4
 directory=PX4-Autopilot
-gnome-terminal --tab --working-directory="$directory" -- bash -c "export ROS_DOMAIN_ID=0; export PYTHONOPTIMIZE=1; make px4_sitl gazebo"
+gnome-terminal --tab --working-directory="$directory" -- bash -c "export ROS_DOMAIN_ID=0; export PYTHONOPTIMIZE=1; make px4_sitl gazebo-classic_iris"
