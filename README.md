@@ -16,3 +16,5 @@
 - [Software in the loop simulation](docs/sitl.md)
 
 - [Hardware in the loop simulation](docs/hitl.md)
+
+- [Plugins](docs/plugins.md)
