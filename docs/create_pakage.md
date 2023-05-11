@@ -24,6 +24,7 @@ At this point will be created a folder named <package_name> in the workspace. In
           'console_scripts': [
             '<executable_name> = <package_name>.<script_name>:main',
           ],
+  }
   ```
 
 - **C++ project**
