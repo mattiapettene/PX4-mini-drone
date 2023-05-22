@@ -4,4 +4,4 @@ install
 log
 read_udp.py
 send_udp.py
-iris
+my_iris
