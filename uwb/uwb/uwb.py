@@ -11,7 +11,7 @@ from px4_msgs.msg import VehicleCommand
 from px4_msgs.msg import VehicleLocalPosition
 from px4_msgs.msg import VehicleStatus
 from rosmsgs.msg import Ranging
-from visualization_msgs.msg import Marker
+from visualization_msgs.msg import MarkerArray
 
 class OffboardControl(Node):
 
@@ -25,8 +25,10 @@ class OffboardControl(Node):
             depth=1
         )
 
-        self.uwb_anchors_subscriber_ = self.create_subscription(Marker, 
-                                                                       "/uwb_anchors", self.uwb_anchors, qos_profile)
+        self.uwb_anchors_subscriber_ = self.create_subscription(MarkerArray, 
+                                                                       "/uwb_anchors", self.uwb_anchors, 1)
+        self.uwb_ranging_subscriber_ = self.create_subscription(Ranging, 
+                                                                       "/uwb_ranging", self.uwb_ranging, 1)
         # self.uwb_ranging_subscriber_ = self.create_subscription(Ranging, 
         #                                                                "/fmu/out/uwb_ranging", self.uwb_ranging, qos_profile)
         self.vehicle_local_position_subscriber_ = self.create_subscription(VehicleLocalPosition, 
@@ -65,6 +67,9 @@ class OffboardControl(Node):
         self.status = 0
         self.takeoff_finished = 0
         self.landing_flag = 0 
+
+        # UWB anchors position
+        n_anchors = 5
 
 
     def timer_callback(self):
@@ -227,11 +232,17 @@ class OffboardControl(Node):
 
     # UWB anchors position import from plugin
     def uwb_anchors(self, msg):
-        id = msg.id
-        type = msg.type
-        print("ID = ", id)
-        print("TYPE = ", type)
-        
+        id = msg.markers[0].id
+        position = msg.markers[0].pose.position
+        print("X = ", position)
+        # TO DO: fare un vettore di position, dove ogni elemento del vettore contiene x,y,z dell'ancora -> mi serve poi per la trilateration
+
+    def uwb_ranging(self, msg):
+        range = msg.range
+        #print("RANGE = ", range)
+
+        # TO DO: fare un vettore di range, dove ogni elemento contiene la distanza del drone da quell'ancora
+
 
 # Define a class Point 
 class Point:
