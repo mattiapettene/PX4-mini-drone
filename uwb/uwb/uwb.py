@@ -10,7 +10,7 @@ from px4_msgs.msg import TrajectorySetpoint
 from px4_msgs.msg import VehicleCommand
 from px4_msgs.msg import VehicleLocalPosition
 from px4_msgs.msg import VehicleStatus
-from rosmsgs.msg import Ranging
+from rosmsgs.msg import RangingArray
 from visualization_msgs.msg import MarkerArray
 
 class OffboardControl(Node):
@@ -27,10 +27,8 @@ class OffboardControl(Node):
 
         self.uwb_anchors_subscriber_ = self.create_subscription(MarkerArray, 
                                                                        "/uwb_anchors", self.uwb_anchors, 1)
-        self.uwb_ranging_subscriber_ = self.create_subscription(Ranging, 
+        self.uwb_ranging_subscriber_ = self.create_subscription(RangingArray, 
                                                                        "/uwb_ranging", self.uwb_ranging, 1)
-        # self.uwb_ranging_subscriber_ = self.create_subscription(Ranging, 
-        #                                                                "/fmu/out/uwb_ranging", self.uwb_ranging, qos_profile)
         self.vehicle_local_position_subscriber_ = self.create_subscription(VehicleLocalPosition, 
                                                                        "/fmu/out/vehicle_local_position", self.get_vehicle_position, qos_profile)
         self.vehicle_status_subscriber_ = self.create_subscription(VehicleStatus, 
@@ -69,8 +67,9 @@ class OffboardControl(Node):
         self.landing_flag = 0 
 
         # UWB anchors position
-        n_anchors = 5
-
+        self.n_anchors = 5
+        self.anchors_position = []
+        self.anchors_range = []
 
     def timer_callback(self):
 
@@ -232,16 +231,20 @@ class OffboardControl(Node):
 
     # UWB anchors position import from plugin
     def uwb_anchors(self, msg):
-        id = msg.markers[0].id
-        position = msg.markers[0].pose.position
-        print("X = ", position)
-        # TO DO: fare un vettore di position, dove ogni elemento del vettore contiene x,y,z dell'ancora -> mi serve poi per la trilateration
+        
+        for i in range(self.n_anchors):
+            get_pos = msg.markers[i].pose.position
+            self.anchors_position.append(get_pos)   
 
     def uwb_ranging(self, msg):
-        range = msg.range
-        #print("RANGE = ", range)
 
-        # TO DO: fare un vettore di range, dove ogni elemento contiene la distanza del drone da quell'ancora
+        for i in range(self.n_anchors):
+            get_range = msg.ranging[i].range
+            self.anchors_range.append(get_range)   
+
+    # Ora ho un vettore di position dove ogni elemento contiene x,y,y+z di ogni ancora e un altro 
+    # vettore di range dove ogni elemento è la distanza del drone da quell'ancora
+    # TO DO -> trilateration
 
 
 # Define a class Point 
