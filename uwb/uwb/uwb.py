@@ -68,8 +68,8 @@ class OffboardControl(Node):
 
         # UWB anchors position
         self.n_anchors = 5
-        self.anchors_position = []
-        self.anchors_range = []
+        self.anchors_position = [None] * self.n_anchors
+        self.anchors_range = [None] * self.n_anchors
 
     def timer_callback(self):
 
@@ -82,6 +82,7 @@ class OffboardControl(Node):
             # Arm the vehicle and takeoff
             self.arm()
             self.takeoff()         
+            #self.print_drone_pos_uwb()
 
         # Check takeoff finished
         if (self.offboard_setpoint_counter_ >= 10 and self.status == 4 and self.takeoff_finished == 0):
@@ -232,19 +233,62 @@ class OffboardControl(Node):
     # UWB anchors position import from plugin
     def uwb_anchors(self, msg):
         
-        for i in range(self.n_anchors):
-            get_pos = msg.markers[i].pose.position
-            self.anchors_position.append(get_pos)   
+        # Fill vector only one time since anchors position is fixed
+        if len(self.anchors_position) < self.n_anchors:
 
+            for i in range(self.n_anchors):
+                get_pos = msg.markers[i].pose.position
+                self.anchors_position[i] = get_pos
+
+
+    # UWB anchors distance
     def uwb_ranging(self, msg):
 
-        for i in range(self.n_anchors):
-            get_range = msg.ranging[i].range
-            self.anchors_range.append(get_range)   
+            for i in range(self.n_anchors):
+                get_range = msg.ranging[i].range
+                self.anchors_range[i] = get_range
 
-    # Ora ho un vettore di position dove ogni elemento contiene x,y,y+z di ogni ancora e un altro 
+                # print("III = ", i)
+                # print("LEN DIS = ", len(self.anchors_range))
+                # print("LEN POS = ", len(self.anchors_position))
+                # print("RANGING = ", get_range)
+     
+
+    # Ora ho un vettore di position dove ogni elemento contiene x,y,z di ogni ancora e un altro 
     # vettore di range dove ogni elemento è la distanza del drone da quell'ancora
     # TO DO -> trilateration
+
+    def trilateration(self):
+
+        num_anchors = self.n_anchors
+        anchors = self.anchors_position
+        distances = self.anchors_range
+
+        A = np.zeros((num_anchors - 1, 3))
+        b = np.zeros((num_anchors - 1,))
+        
+        for i in range(1, num_anchors):
+            A[i - 1] = 2 * (np.array(anchors[i]) - np.array(anchors[0]))
+            b[i - 1] = distances[0]**2 - distances[i]**2 + np.linalg.norm(anchors[i])**2 - np.linalg.norm(anchors[0])**2
+        
+        result, residuals, rank, singular_values = np.linalg.lstsq(A, b, rcond=None)
+        centroid = np.mean(np.array(anchors), axis=0)
+        result += centroid
+        
+        return result
+
+
+    def print_drone_pos_uwb(self):
+
+        # Calcola la posizione del drone
+        drone_position = self.trilateration()
+
+        # Stampa le coordinate x, y, z del drone
+        print("Posizione del drone:")
+        print("x =", drone_position[0])
+        print("y =", drone_position[1])
+        print("z =", drone_position[2])
+
 
 
 # Define a class Point 
