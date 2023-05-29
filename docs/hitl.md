@@ -21,6 +21,13 @@ During the HITL simulation, the commands to the flight controller are sent by a 
 
 ## HITL simulation
 ### Gazebo launch
+
+Make sure to do not have any gazebo client or server opened:
+``` bash
+killall gzclien
+killall gzserver
+``` 
+
 First of all make sure QGroundControl is closed. Then launch the following from a terminal: <br>
 ``` 
 cd ~/PX4-Autopilot
@@ -28,6 +35,7 @@ DONT_RUN=1 make px4_sitl_default gazebo-classic
 source Tools/simulation/gazebo-classic/setup_gazebo.bash $(pwd) $(pwd)/build/px4_sitl_default
 gazebo Tools/simulation/gazebo-classic/sitl_gazebo-classic/worlds/hitl_iris.world
 ```
+
 Only at this point it is possible to launch QGroundControl.
 
 ### ROS2 launch
@@ -38,4 +46,10 @@ source ~/microros_ws/install/local_setup.bash
 source install/local_setup.bash
 ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyS0 -b 921600 ROS_DOMAIN_ID=0
 ```
+Alternatively it is possible to launch the following:
+``` bash
+cd ~/PX4-mini-drone
+./MicroXRCE.sh
+``` 
+
 At this point, always on the companion board, it is possible to navigate to the folder where the scripts are contained and launch them in the same way as in the SITL simulation.
