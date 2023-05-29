@@ -67,7 +67,7 @@ class OffboardControl(Node):
         self.landing_flag = 0 
 
         # UWB anchors position
-        self.n_anchors = 5
+        self.n_anchors = 6
         self.anchors_position = [None] * self.n_anchors
         self.anchors_range = [None] * self.n_anchors
 
@@ -81,8 +81,8 @@ class OffboardControl(Node):
 
             # Arm the vehicle and takeoff
             self.arm()
-            self.takeoff()         
-            #self.print_drone_pos_uwb()
+            self.print_drone_pos_uwb()
+            #self.takeoff()         
 
         # Check takeoff finished
         if (self.offboard_setpoint_counter_ >= 10 and self.status == 4 and self.takeoff_finished == 0):
@@ -232,31 +232,39 @@ class OffboardControl(Node):
 
     # UWB anchors position import from plugin
     def uwb_anchors(self, msg):
-
-        print("ANC_LEN = ", len(msg.markers))
+        
+        self.n_anchors = len(msg.markers)
+        #print("ANC_LEN = ", len(msg.markers))
         
         # Fill vector only one time since anchors position is fixed
-        if len(self.anchors_position) < self.n_anchors:
 
-            for i in range(self.n_anchors):
-                get_pos = msg.markers[i].pose.position
-                self.anchors_position[i] = get_pos
+        for i in range(self.n_anchors):
+            get_X = msg.markers[i].pose.position.x
+            get_Y = msg.markers[i].pose.position.y
+            get_Z = msg.markers[i].pose.position.z
+            self.anchors_position[i] = (get_X, get_Y, get_Z)
+
+            # print("ID = ", i)
+            # print("POSITION X = ", msg.markers[i].pose.position.x)
+            # print("POSITION Y = ", msg.markers[i].pose.position.y)
+            # print("POSITION Z = ", msg.markers[i].pose.position.z)
+            # print("POSITION = ", msg.markers[i].pose.position)
 
 
     # UWB anchors distance
     def uwb_ranging(self, msg):
             
             self.n_anchors = len(msg.ranging)
-            print("DYN_LEN = ", len(msg.ranging))
+            #print("DIS_LEN = ", len(msg.ranging))
 
             for i in range(self.n_anchors):
                 get_range = msg.ranging[i].range
-                self.anchors_range[i] = get_range
+                self.anchors_range[i] = get_range/1000
 
                 # print("III = ", i)
                 # print("LEN DIS = ", len(self.anchors_range))
                 # print("LEN POS = ", len(self.anchors_position))
-                # print("RANGING = ", get_range)
+                # print("RANGING = ", get_range/1000)
      
 
     # Ora ho un vettore di position dove ogni elemento contiene x,y,z di ogni ancora e un altro 
@@ -267,7 +275,15 @@ class OffboardControl(Node):
 
         num_anchors = self.n_anchors
         anchors = self.anchors_position
+        print("N_anch = ", self.n_anchors)
+        print("LEN_VEC = ", len(self.anchors_position))
+        print("VECTOR = ", self.anchors_range)
         distances = self.anchors_range
+
+        # Prova ancore con posizioni semplici -> funziona
+        # anchors = [(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0)]
+        # num_anchors = 4
+        # distances = [1, 1, 1, 1]
 
         A = np.zeros((num_anchors - 1, 3))
         b = np.zeros((num_anchors - 1,))
@@ -278,7 +294,10 @@ class OffboardControl(Node):
         
         result, residuals, rank, singular_values = np.linalg.lstsq(A, b, rcond=None)
         centroid = np.mean(np.array(anchors), axis=0)
+        # centroid = np.mean(np.array([anchor for anchor in anchors if anchor is not None]), axis=0)
         result += centroid
+
+        # TO DO: sistemare centroid in modo che prenda solo gli elementi del vettore non None in ordine
         
         return result
 
@@ -293,6 +312,7 @@ class OffboardControl(Node):
         print("x =", drone_position[0])
         print("y =", drone_position[1])
         print("z =", drone_position[2])
+        
 
 
 
