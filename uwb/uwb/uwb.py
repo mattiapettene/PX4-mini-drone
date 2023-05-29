@@ -232,6 +232,8 @@ class OffboardControl(Node):
 
     # UWB anchors position import from plugin
     def uwb_anchors(self, msg):
+
+        print("ANC_LEN = ", len(msg.markers))
         
         # Fill vector only one time since anchors position is fixed
         if len(self.anchors_position) < self.n_anchors:
@@ -243,6 +245,9 @@ class OffboardControl(Node):
 
     # UWB anchors distance
     def uwb_ranging(self, msg):
+            
+            self.n_anchors = len(msg.ranging)
+            print("DYN_LEN = ", len(msg.ranging))
 
             for i in range(self.n_anchors):
                 get_range = msg.ranging[i].range
