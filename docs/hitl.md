@@ -24,7 +24,7 @@ During the HITL simulation, the commands to the flight controller are sent by a 
 
 Make sure to do not have any gazebo client or server opened:
 ``` bash
-killall gzclien
+killall gzclient
 killall gzserver
 ``` 
 
