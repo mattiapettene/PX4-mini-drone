@@ -57,7 +57,7 @@ class OffboardControl(Node):
 
         # Point list tajectory definition
         p1 = Point(0.0, 0.0, -2.5)
-        p2 = Point(3.0, 0.0, -2.5)
+        p2 = Point(0.0, -1.0, -2.5)
         self.point_list = [p1, p2]
         
         self.range = 0.3 # Set tolerance range to 30 cm
@@ -81,8 +81,9 @@ class OffboardControl(Node):
 
             # Arm the vehicle and takeoff
             self.arm()
-            self.print_drone_pos_uwb()
-            #self.takeoff()         
+            self.takeoff()
+            
+            # self.print_drone_pos_uwb()         
 
         # Check takeoff finished
         if (self.offboard_setpoint_counter_ >= 10 and self.status == 4 and self.takeoff_finished == 0):
@@ -94,6 +95,7 @@ class OffboardControl(Node):
             self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_DO_SET_MODE, 1., 6.)
             self.publish_offboard_control_mode()
             self.publish_trajectory_setpoint()
+            # self.print_drone_pos_uwb()  
 
         # Land
         if(len(self.point_list) == 0 and self.landing_flag == 0):  # when the list is empty all points are reached
@@ -259,25 +261,13 @@ class OffboardControl(Node):
 
             for i in range(self.n_anchors):
                 get_range = msg.ranging[i].range
-                self.anchors_range[i] = get_range/1000
+                self.anchors_range[i] = get_range/1000  # transform to meters
 
-                # print("III = ", i)
-                # print("LEN DIS = ", len(self.anchors_range))
-                # print("LEN POS = ", len(self.anchors_position))
-                # print("RANGING = ", get_range/1000)
-     
-
-    # Ora ho un vettore di position dove ogni elemento contiene x,y,z di ogni ancora e un altro 
-    # vettore di range dove ogni elemento è la distanza del drone da quell'ancora
-    # TO DO -> trilateration
 
     def trilateration(self):
 
         num_anchors = self.n_anchors
         anchors = self.anchors_position
-        print("N_anch = ", self.n_anchors)
-        print("LEN_VEC = ", len(self.anchors_position))
-        print("VECTOR = ", self.anchors_range)
         distances = self.anchors_range
 
         # Prova ancore con posizioni semplici -> funziona
@@ -293,13 +283,12 @@ class OffboardControl(Node):
             b[i - 1] = distances[0]**2 - distances[i]**2 + np.linalg.norm(anchors[i])**2 - np.linalg.norm(anchors[0])**2
         
         result, residuals, rank, singular_values = np.linalg.lstsq(A, b, rcond=None)
-        centroid = np.mean(np.array(anchors), axis=0)
-        # centroid = np.mean(np.array([anchor for anchor in anchors if anchor is not None]), axis=0)
+        # centroid = np.mean(np.array(anchors), axis=0)
+        centroid = np.mean(np.array([anchor for anchor in anchors if anchor is not None]), axis=0)
         result += centroid
-
-        # TO DO: sistemare centroid in modo che prenda solo gli elementi del vettore non None in ordine
         
         return result
+
 
 
     def print_drone_pos_uwb(self):
@@ -313,7 +302,6 @@ class OffboardControl(Node):
         print("y =", drone_position[1])
         print("z =", drone_position[2])
         
-
 
 
 # Define a class Point 
