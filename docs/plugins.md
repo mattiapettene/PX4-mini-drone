@@ -10,7 +10,7 @@ To use the uwb gazebo plugin you need to install and build the following repo:
 Then to perform the simulation copy the customize world inside the PX4-Autopilot folder:
 
 ```bash
-cp ~/PX4-mini-drone/my_world.world ~/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/worlds/
+cp ~/PX4-mini-drone/world/my_world.world ~/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/worlds/
 ```
 
 To use the uwb plugin, add the following lines befor ```</model>``` to ```~/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/models/iris.sdf``` file
