@@ -4,4 +4,4 @@ gnome-terminal --tab --working-directory="$directory" -- bash -c "MicroXRCEAgent
 
 #PX4
 directory=PX4-Autopilot
-gnome-terminal --tab --working-directory="$directory" -- bash -c "make px4_sitl gz_x500"
+gnome-terminal --tab --working-directory="$directory" -- bash -c "make px4_sitl gazebo"

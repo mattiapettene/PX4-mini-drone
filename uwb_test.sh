@@ -1,7 +1,7 @@
-#MICROROS
-directory=microros_ws
-gnome-terminal --tab --working-directory="$directory" -- bash -c "export ROS_DOMAIN_ID=0; export PYTHONOPTIMIZE=1; source install/local_setup.sh; ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888 ROS_DOMAIN_ID=0"
+#MICROXRCE
+directory=Micro-XRCE-DDS-Agent
+gnome-terminal --tab --working-directory="$directory" -- bash -c "MicroXRCEAgent udp4 -p 8888"
 
 #PX4
 directory=PX4-Autopilot
-gnome-terminal --tab --working-directory="$directory" -- bash -c "export ROS_DOMAIN_ID=0; export PYTHONOPTIMIZE=1; make px4_sitl gazebo-classic_iris PX4_SITL_WORLD=my_world_2"
+gnome-terminal --tab --working-directory="$directory" -- bash -c "make px4_sitl gazebo-classic_iris PX4_SITL_WORLD=my_world_2"
