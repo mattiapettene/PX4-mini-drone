@@ -10,6 +10,7 @@ from px4_msgs.msg import TrajectorySetpoint
 from px4_msgs.msg import VehicleCommand
 from px4_msgs.msg import VehicleLocalPosition
 from px4_msgs.msg import VehicleStatus
+from px4_msgs.msg import VehicleOdometry
 from rosmsgs.msg import RangingArray
 from visualization_msgs.msg import MarkerArray
 
@@ -39,6 +40,8 @@ class OffboardControl(Node):
                                                                     "/fmu/in/trajectory_setpoint", qos_profile)
         self.vehicle_command_publisher_ = self.create_publisher(VehicleCommand, 
                                                                 "/fmu/in/vehicle_command", qos_profile)
+        self.uwb_position_publisher_ = self.create_publisher(VehicleOdometry, 
+                                                                "/fmu/in/vehicle_visual_odometry", qos_profile)
         
 
         timer_period = 0.1  # 100 milliseconds
@@ -70,8 +73,13 @@ class OffboardControl(Node):
         self.n_anchors = 6
         self.anchors_position = [None] * self.n_anchors
         self.anchors_range = [None] * self.n_anchors
+        self.anchors_id = [None] * self.n_anchors
+        self.ground_flag = 0
+        self.ground_position = [None]
 
     def timer_callback(self):
+
+        self.publish_pos_uwb()
 
         # Arm and takeoff
         if (self.offboard_setpoint_counter_ == 0):
@@ -83,7 +91,7 @@ class OffboardControl(Node):
             self.arm()
             self.takeoff()
             
-            # self.print_drone_pos_uwb()         
+            self.multilateration()      
 
         # Check takeoff finished
         if (self.offboard_setpoint_counter_ >= 10 and self.status == 4 and self.takeoff_finished == 0):
@@ -94,8 +102,7 @@ class OffboardControl(Node):
         if (self.takeoff_finished == 1 and self.point_list):
             self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_DO_SET_MODE, 1., 6.)
             self.publish_offboard_control_mode()
-            self.publish_trajectory_setpoint()
-            # self.print_drone_pos_uwb()  
+            self.publish_trajectory_setpoint() 
 
         # Land
         if(len(self.point_list) == 0 and self.landing_flag == 0):  # when the list is empty all points are reached
@@ -245,12 +252,23 @@ class OffboardControl(Node):
             get_Y = msg.markers[i].pose.position.y
             get_Z = msg.markers[i].pose.position.z
             self.anchors_position[i] = (get_X, get_Y, get_Z)
+            self.anchors_id[i] = msg.markers[i].id
 
             # print("ID = ", i)
             # print("POSITION X = ", msg.markers[i].pose.position.x)
             # print("POSITION Y = ", msg.markers[i].pose.position.y)
             # print("POSITION Z = ", msg.markers[i].pose.position.z)
             # print("POSITION = ", msg.markers[i].pose.position)
+
+            if self.anchors_id[i] == 0:
+                x_ground = msg.markers[i].pose.position.x
+                y_ground = msg.markers[i].pose.position.y
+                z_ground = msg.markers[i].pose.position.z
+                self.anchor_ground = (x_ground, y_ground, z_ground)
+            
+        # print("x_ground = ", self.anchor_ground[0])
+        # print("y_ground = ", self.anchor_ground[1])
+        # print("z_ground = ", self.anchor_ground[2])
 
 
     # UWB anchors distance
@@ -264,43 +282,64 @@ class OffboardControl(Node):
                 self.anchors_range[i] = get_range/1000  # transform to meters
 
 
-    def trilateration(self):
+    def multilateration(self):
 
         num_anchors = self.n_anchors
-        anchors = self.anchors_position
+        anchors_pos = self.anchors_position
         distances = self.anchors_range
 
-        # Prova ancore con posizioni semplici -> funziona
-        # anchors = [(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0)]
-        # num_anchors = 4
-        # distances = [1, 1, 1, 1]
-
+        if num_anchors < 4:
+            raise ValueError("Numero insufficiente di ancore per la multilaterazione.")
+        
         A = np.zeros((num_anchors - 1, 3))
-        b = np.zeros((num_anchors - 1,))
+        b = np.zeros((num_anchors - 1))
+
+        # Multilateration algorithm -> solve A*x = b
+        # A = [ x1-x0  y1-y0  z1-z0       b = 0.5 * [ d0^2 - d1^2 + x1^2-x0^2  y1^2-y0^2  z1^2-z0^2
+        #       ...                 ]                 ...                                          ]
         
-        for i in range(1, num_anchors):
-            A[i - 1] = 2 * (np.array(anchors[i]) - np.array(anchors[0]))
-            b[i - 1] = distances[0]**2 - distances[i]**2 + np.linalg.norm(anchors[i])**2 - np.linalg.norm(anchors[0])**2
+        for i in range(num_anchors - 1):
+            A[i, 0] = anchors_pos[i+1][0] - abs(anchors_pos[0][0])       
+            A[i, 1] = anchors_pos[i+1][1] - abs(anchors_pos[0][1])       
+            A[i, 2] = anchors_pos[i+1][2] - abs(anchors_pos[0][2])      
+            
+            b[i] = 0.5*(
+            (distances[0] ** 2 - distances[i+1] ** 2) +
+            (anchors_pos[i+1][0] ** 2 - anchors_pos[0][0] ** 2) +
+            (anchors_pos[i+1][1] ** 2 - anchors_pos[0][1] ** 2) +
+            (anchors_pos[i+1][2] ** 2 - anchors_pos[0][2] ** 2))
+
+        target_position, _residuals, _rank, _singular_values = np.linalg.lstsq(A, b, rcond=None)
+
+        if self.ground_flag == 0:
+            self.ground_position = target_position
+            self.ground_flag = 1
         
-        result, residuals, rank, singular_values = np.linalg.lstsq(A, b, rcond=None)
-        # centroid = np.mean(np.array(anchors), axis=0)
-        centroid = np.mean(np.array([anchor for anchor in anchors if anchor is not None]), axis=0)
-        result += centroid
+        drone_position = (target_position[0] - self.ground_position[0],
+                          target_position[1] - self.ground_position[1],
+                          target_position[2] - self.ground_position[2])
+
+        return drone_position
+
+
+    def publish_pos_uwb(self):
+
+        msg = VehicleOdometry()
+
+        drone_position = self.multilateration()
         
-        return result
+        msg.position[0] = - drone_position[0]   #x
+        msg.position[1] = - drone_position[1]   #y
+        #msg.position[2] = - drone_position[2]   #z
+        msg.position[2] = 10  #z
 
+        self.uwb_position_publisher_.publish(msg) 
 
-
-    def print_drone_pos_uwb(self):
-
-        # Calcola la posizione del drone
-        drone_position = self.trilateration()
-
-        # Stampa le coordinate x, y, z del drone
+        # Print drone coordinates from UWB
         print("Posizione del drone:")
-        print("x =", drone_position[0])
-        print("y =", drone_position[1])
-        print("z =", drone_position[2])
+        print("x =", - drone_position[0])
+        print("y =", - drone_position[1])
+        print("z =", - drone_position[2])
         
 
 
