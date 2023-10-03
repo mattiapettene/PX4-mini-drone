@@ -22,7 +22,7 @@ To use the uwb plugin, add the following lines befor ```</model>``` to ```~/PX4-
     <nlosSoftWallWidth>0.25</nlosSoftWallWidth>
     <tag_z_offset>0</tag_z_offset>
     <anchor_prefix>uwb_anchor</anchor_prefix>
-    <all_los>false</all_los>
+    <all_los>true</all_los>
     <tag_id>0</tag_id>
 </plugin>
 ```
