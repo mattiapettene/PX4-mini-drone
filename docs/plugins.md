@@ -33,7 +33,7 @@ To use the uwb plugin, add the following lines befor ```</model>``` to ```~/PX4-
 cp -R ~/PX4-mini-drone/my_iris ~/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/models/my_iris
 ``` -->
 
-To lunch the simulation:
+To lunch the simulation including the UWB world:
 
 ```bash
 make px4_sitl gazebo-classic_iris PX4_SITL_WORLD=my_world
@@ -56,3 +56,20 @@ To use the uwb plugin, add the following lines befor ```</model>``` to ```~/PX4-
     <gaussian_noise>0.01</gaussian_noise>
 </plugin>
 ```
+
+## Qualisys - ros2 bridge
+
+Clone the repository [qualisys](https://github.com/GiacomoCorradini/qualisys_ros2)
+
+``` bash
+git clone https://github.com/GiacomoCorradini/qualisys_ros2.git
+```
+
+BUild the repository
+
+```bash
+colcon build
+. install/setup.bash
+```
+
+You need to change the `--server` (ip addr) and `--rate` (hz) arguments in the launch script to match your system.
