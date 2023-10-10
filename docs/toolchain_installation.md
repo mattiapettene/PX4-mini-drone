@@ -1,9 +1,9 @@
 # System Details
 
+- Python 3.10
 - Ubuntu 22.04
 - ROS2 Humble
-- micro-ROS
-- Python 3.10
+- MicroXRCE
 
 ## Set-up
 
@@ -11,90 +11,26 @@
 
 - [Installation Ubuntu (Debian)](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html)
 
-Set locale
-
 ``` bash
-locale  # check for UTF-8
-
 sudo apt update && sudo apt install locales
 sudo locale-gen en_US en_US.UTF-8
 sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 export LANG=en_US.UTF-8
-
-locale  # verify settings
-```
-
-Setup Sources
-
-``` bash
 sudo apt install software-properties-common
 sudo add-apt-repository universe
-```
-
-``` bash
-sudo apt update && sudo apt install curl
+sudo apt update && sudo apt install curl -y
 sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
-```
-
-``` bash
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
-```
-
-Install ROS 2 packages
-
-``` bash
-sudo apt update && sudo apt upgrade
+sudo apt update && sudo apt upgrade -y
 sudo apt install ros-humble-desktop
-sudo apt install ros-humble-ros-base
 sudo apt install ros-dev-tools
+source /opt/ros/humble/setup.bash && echo "source /opt/ros/humble/setup.bash" >> .bashrc
 ```
 
-Environment setup
+- Some Python dependencies must also be installed:
 
-``` bash
-# Replace ".bash" with your shell if you're not using bash
-# Possible values are: setup.bash, setup.sh, setup.zsh
-source /opt/ros/humble/setup.bash
-```
-
-- Additional packages
-
-``` bash
-sudo apt update && sudo apt install -y \
-  python3-flake8-docstrings \
-  python3-pip \
-  python3-pytest-cov \
-  ros-dev-tools
-```
-
-Install packages according to your Ubuntu version (Ubuntu 22.04)
-
-``` bash
-sudo apt install -y \
-   python3-flake8-blind-except \
-   python3-flake8-builtins \
-   python3-flake8-class-newline \
-   python3-flake8-comprehensions \
-   python3-flake8-deprecated \
-   python3-flake8-import-order \
-   python3-flake8-quotes \
-   python3-pytest-repeat \
-   python3-pytest-rerunfailures
-```
-
-- Configuration environment step ([Tutorial section](https://docs.ros.org/en/humble/Tutorials.html))
-
-``` bash
-echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
-echo "export ROS_DOMAIN_ID=0" >> ~/.bashrc
-echo "export ROS_LOCALHOST_ONLY=1" >> ~/.bashrc
-```
-
-- Initializing rosdep
-
-``` bash
-sudo rosdep init
-rosdep update
+```bash
+pip install --user -U empy pyros-genmsg setuptools
 ```
 
 ### Install [QGroundControl](https://docs.qgroundcontrol.com/master/en/getting_started/download_and_install.html)
@@ -135,14 +71,21 @@ git clone https://github.com/PX4/PX4-Autopilot.git --recursive
 bash ./PX4-Autopilot/Tools/setup/ubuntu.sh
 ```
 
+- Install gazebo classic
+
+```bash
+sudo apt install gazebo
+sudo apt-get install ros-humble-gazebo-ros-pkgs
+```
+
 ### Install PX4 ROS Com and PX4 msg
 
 - Download the repositories
 
 ``` bash
 cd ~
-mkdir px4_ros_com_ws
-cd px4_ros_com_ws
+mkdir -p ~/ws_offboard_control/src/
+cd ~/ws_offboard_control/src/
 ```
 
 ``` bash
@@ -154,65 +97,33 @@ git clone https://github.com/PX4/px4_msgs.git
 
 ``` bash
 colcon build
+source install/local_setup.bash
 ```
 
 ### PX4-FastDDS Bridge
 
 PX4 uses XRCE-DDS middleware to allow uORB messages to be published and subscribed on a companion computer as though they were ROS 2 topics.
 
-XRCE-DDS middleware can be installed in two different ways:
-
-1. **[Install MicroXRCE agent](https://micro-xrce-dds.docs.eprosima.com/en/stable/agent.html)**
+**[Install MicroXRCE agent](https://micro-xrce-dds.docs.eprosima.com/en/stable/agent.html)**
 
 ``` bash
 git clone https://github.com/eProsima/Micro-XRCE-DDS-Agent.git
 cd Micro-XRCE-DDS-Agent
-colcon build
+mkdir build
+cd build
+cmake ..
+make
+sudo make install
+sudo ldconfig /usr/local/lib/
 ```
 
 - Try running the agent
 
 ``` bash
-source install/local_setup.sh
-MicroXRCEAgent udp4 --port 8888
+MicroXRCEAgent udp4 -p 8888
 ```
 
-2. **[Install micro-ROS agent](https://micro.ros.org/)** *(Preferable)*
-
-- Ensure your ROS_DISTRO environment variable is set
-
-``` bash
-export ROS_DISTRO=humble
-```
-
-- Building the [micro-ROS-agent](https://github.com/micro-ROS/micro_ros_setup#building-micro-ros-agent)
-
-``` bash
-cd ~
-mkdir ~/microros_ws && cd microros_ws
-git clone -b $ROS_DISTRO https://github.com/micro-ROS/micro_ros_setup.git 
-```
-
-``` bash
-mkdir src
-mv micro_ros_setup/ src/
-colcon build
-```
-
-``` bash
-source install/local_setup.sh
-ros2 run micro_ros_setup create_agent_ws.sh
-ros2 run micro_ros_setup build_agent.sh
-```
-
-- Try running the agent
-
-``` bash
-source install/local_setup.sh
-ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888
-```
-
-### Installation check, you will need four terminals
+## Installation check, you will need four terminals
 
 - Install the [px4-offboard](https://github.com/Jaeyoung-Lim/px4-offboard) example
 
@@ -229,11 +140,9 @@ colcon build
 - Start the micro-ros-agent
 
 ``` bash
-cd ~/microros_ws
 export ROS_DOMAIN_ID=0
 export PYTHONOPTIMIZE=1
-source install/local_setup.sh
-ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888 ROS_DOMAIN_ID=0
+MicroXRCEAgent udp4 -p 8888
 ```
 
 - Start Gazebo
@@ -242,7 +151,7 @@ ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888 ROS_DOMAIN_ID=0
 cd ~/PX4-Autopilot
 export ROS_DOMAIN_ID=0
 export PYTHONOPTIMIZE=1
-make px4_sitl gazebo
+make px4_sitl gazebo-classic
 ```
 
 - Start QGround Controller and Take Off
