@@ -11,7 +11,7 @@ from px4_msgs.msg import VehicleCommand
 from px4_msgs.msg import VehicleLocalPosition
 from px4_msgs.msg import VehicleStatus
 from px4_msgs.msg import VehicleOdometry
-
+from geometry_msgs.msg import Pose
 
 class OffboardControl(Node):
 
@@ -25,18 +25,21 @@ class OffboardControl(Node):
             depth=1
         )
 
-        self.vehicle_mocap_odometry_publisher_ = self.create_publisher(VehicleOdometry, 
-                                                                       "/fmu/in/vehicle_mocap_odometry", qos_profile)
+        # chenge topic name
+        self.mocap_pose_subscriber_ = self.create_subscription(Pose, 
+                                                                    "/to_change", self.get_mocap_pose, 1)
         self.vehicle_local_position_subscriber_ = self.create_subscription(VehicleLocalPosition, 
-                                                                       "/fmu/out/vehicle_local_position", self.get_vehicle_position, qos_profile)
+                                                                    "/fmu/out/vehicle_local_position", self.get_vehicle_position, qos_profile)
         self.vehicle_status_subscriber_ = self.create_subscription(VehicleStatus, 
-                                                                       "/fmu/out/vehicle_status", self.get_vehicle_status, qos_profile)
+                                                                    "/fmu/out/vehicle_status", self.get_vehicle_status, qos_profile)
         self.offboard_control_mode_publisher_ = self.create_publisher(OffboardControlMode,
-                                                                        "/fmu/in/offboard_control_mode", qos_profile)
+                                                                    "/fmu/in/offboard_control_mode", qos_profile)
         self.trajectory_setpoint_publisher_ = self.create_publisher(TrajectorySetpoint,
                                                                     "/fmu/in/trajectory_setpoint", qos_profile)
         self.vehicle_command_publisher_ = self.create_publisher(VehicleCommand, 
-                                                                "/fmu/in/vehicle_command", qos_profile)
+                                                                    "/fmu/in/vehicle_command", qos_profile)
+        self.uwb_position_publisher_ = self.create_publisher(VehicleOdometry, 
+                                                                    "/fmu/in/vehicle_visual_odometry", qos_profile)
         
 
         timer_period = 0.1  # 100 milliseconds
@@ -55,7 +58,7 @@ class OffboardControl(Node):
 
         # Point list tajectory definition
         p1 = Point(0.0, 0.0, -2.5)
-        p2 = Point(3.0, 0.0, -2.5)
+        p2 = Point(0.0, -1.0, -2.5)
         self.point_list = [p1, p2]
         
         self.range = 0.3 # Set tolerance range to 30 cm
@@ -64,11 +67,12 @@ class OffboardControl(Node):
         self.takeoff_finished = 0
         self.landing_flag = 0 
 
+        # UWB anchors position
+        self.position_mocap = Pose
 
     def timer_callback(self):
 
-        # Publish data from MoCap
-        self.publish_vehicle_mocap_odometry()
+        self.publish_pos_mocap()
 
         # Arm and takeoff
         if (self.offboard_setpoint_counter_ == 0):
@@ -78,7 +82,9 @@ class OffboardControl(Node):
 
             # Arm the vehicle and takeoff
             self.arm()
-            self.takeoff()         
+            self.takeoff()
+            
+            self.multilateration()      
 
         # Check takeoff finished
         if (self.offboard_setpoint_counter_ >= 10 and self.status == 4 and self.takeoff_finished == 0):
@@ -89,7 +95,7 @@ class OffboardControl(Node):
         if (self.takeoff_finished == 1 and self.point_list):
             self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_DO_SET_MODE, 1., 6.)
             self.publish_offboard_control_mode()
-            self.publish_trajectory_setpoint()
+            self.publish_trajectory_setpoint() 
 
         # Land
         if(len(self.point_list) == 0 and self.landing_flag == 0):  # when the list is empty all points are reached
@@ -153,20 +159,7 @@ class OffboardControl(Node):
         msg.body_rate = False
         msg.timestamp = int(Clock().now().nanoseconds / 1000) # time in microseconds
         self.offboard_control_mode_publisher_.publish(msg)
-
     
-    # Publish vehicle odometry from MoCap
-    def publish_vehicle_mocap_odometry(self):
-        msg = VehicleOdometry()
-
-        # Set x,y,z temporarily equal to GPS position to test the code, then will be replaced by the MoCap data
-        x_mocap = self.x
-        y_mocap = self.y
-        z_mocap = self.z
-
-        msg.position = [x_mocap, y_mocap, z_mocap]
-        self.vehicle_mocap_odometry_publisher_.publish(msg)
-
 
 	# Publish a trajectory setpoint
     def publish_trajectory_setpoint(self):
@@ -198,10 +191,10 @@ class OffboardControl(Node):
         msg.param5 = param5
         msg.param6 = param6
         msg.param7 = param7
-        msg.command = command  # command ID
-        msg.target_system = 1  # system which should execute the command
+        msg.command = command     # command ID
+        msg.target_system = 1     # system which should execute the command
         msg.target_component = 1  # component which should execute the command, 0 for all components
-        msg.source_system = 1  # system sending the command
+        msg.source_system = 1     # system sending the command
         msg.source_component = 1  # component sending the command
         msg.from_external = True
         msg.timestamp = int(Clock().now().nanoseconds / 1000) # time in microseconds
@@ -237,9 +230,40 @@ class OffboardControl(Node):
     def distance(self, p):
         d = np.sqrt((p.x- self.x)**2 + (p.y- self.y)**2 + (p.z- self.z)**2)
         return d
+    
+    # save geometry msgs provided by mocap
+    def get_mocap_pose(self, msg):
+        self.position_mocap = msg
+    
+    # save drone position into VehicleOdometry message
+    def publish_pos_mocap(self):
 
+        msg = VehicleOdometry()
+        pose = self.position_mocap
+        
+        msg.position[0] = pose.position.x  
+        msg.position[1] = pose.position.y  
+        msg.position[2] = pose.position.z
 
+        msg.q[0] = pose.orientation.x
+        msg.q[1] = pose.orientation.y
+        msg.q[2] = pose.orientation.z
+        msg.q[3] = pose.orientation.w
 
+        self.uwb_position_publisher_.publish(msg) 
+
+        # Print drone coordinates from UWB
+        print("Drone position:")
+        print("x =", pose.position.x)
+        print("y =", pose.position.y)
+        print("z =", pose.position.z)
+
+        print("Drone orientation:")
+        print("x =", pose.orientation.x)
+        print("y =", pose.orientation.y)
+        print("z =", pose.orientation.z)
+        print("w =", pose.orientation.w)
+        
 
 # Define a class Point 
 class Point:
