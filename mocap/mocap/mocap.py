@@ -8,7 +8,6 @@ from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy, QoSDur
 from px4_msgs.msg import OffboardControlMode
 from px4_msgs.msg import TrajectorySetpoint
 from px4_msgs.msg import VehicleCommand
-from px4_msgs.msg import VehicleLocalPosition
 from px4_msgs.msg import VehicleStatus
 from px4_msgs.msg import VehicleOdometry
 from geometry_msgs.msg import Pose
@@ -28,8 +27,8 @@ class OffboardControl(Node):
         # chenge topic name
         self.mocap_pose_subscriber_ = self.create_subscription(Pose, 
                                                                     "/to_change", self.get_mocap_pose, 1)
-        self.vehicle_local_position_subscriber_ = self.create_subscription(VehicleLocalPosition, 
-                                                                    "/fmu/out/vehicle_local_position", self.get_vehicle_position, qos_profile)
+        self.vehicle_local_position_subscriber_ = self.create_subscription(VehicleOdometry, 
+                                                                    "/fmu/out/vehicle_odometry", self.get_vehicle_position, qos_profile)
         self.vehicle_status_subscriber_ = self.create_subscription(VehicleStatus, 
                                                                     "/fmu/out/vehicle_status", self.get_vehicle_status, qos_profile)
         self.offboard_control_mode_publisher_ = self.create_publisher(OffboardControlMode,
@@ -130,7 +129,7 @@ class OffboardControl(Node):
     
     # Takeoff
     def takeoff(self):
-        self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_TAKEOFF, math.nan, math.nan, math.nan, math.nan, math.nan, math.nan, 3.0)
+        self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_TAKEOFF, math.nan, math.nan, math.nan, math.nan, math.nan, 1.0)
         self.get_logger().info("Takeoff command sent")
 
     # Loiter
@@ -203,16 +202,19 @@ class OffboardControl(Node):
 
     # Get vehicle position and velocity
     def get_vehicle_position(self, msg):
-        self.x = msg.x
-        self.y = msg.y
-        self.z = msg.z
+        
+        # x, y, z are updated at each time step
+        self.x = msg.position[0]
+        self.y = msg.position[1]
+        self.z = msg.position[2]
         
         if(self.print_position):
             self.get_logger().info("Actual position: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
             
-        vx = msg.vx
-        vy = msg.vy
-        vz = msg.vz
+        # vx, vy, vz are updated at each time step
+        vx = msg.velocity[0]
+        vy = msg.velocity[1]
+        vz = msg.velocity[2]
         
         if(self.print_velocity):
             self.get_logger().info("Actual velocity: ({:.2f}, {:.2f}, {:.2f})".format(vx, vy, vz))
