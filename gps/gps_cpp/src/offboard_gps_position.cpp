@@ -3,7 +3,7 @@
 #include <px4_msgs/msg/trajectory_setpoint.hpp>
 #include <px4_msgs/msg/vehicle_command.hpp>
 #include <px4_msgs/msg/vehicle_status.hpp>
-#include <px4_msgs/msg/vehicle_local_position.hpp>
+#include <px4_msgs/msg/vehicle_odometry.hpp>
 #include <px4_msgs/msg/vehicle_constraints.hpp>
 
 #include <rclcpp/rclcpp.hpp>
@@ -81,7 +81,7 @@ public:
 		 * @brief Create subscriber
 		*/
 		vehicle_status_sub_ = this->create_subscription<VehicleStatus>("/fmu/out/vehicle_status",qos,std::bind(&OffboardControl::vehicle_status_callback,this,_1));
-		vehicle_position_sub_ = this->create_subscription<VehicleLocalPosition>("/fmu/out/vehicle_local_position",qos,std::bind(&OffboardControl::vehicle_position_callback,this,_1));
+		vehicle_position_sub_ = this->create_subscription<VehicleOdometry>("/fmu/out/vehicle_odometry",qos,std::bind(&OffboardControl::vehicle_position_callback,this,_1));
 
 		/**
 		 * @brief Create publisher
@@ -152,15 +152,15 @@ private:
 	uint64_t flag_to_shutdown = 0;
 	uint64_t flag_to_land = 0;
 	size_t index = 0;
-	float tolerance = 0.30;              // tolerance
-	float takeoff_height = -2.5;		 // default height for the takeoff
+	float tolerance = 1.00;              // tolerance
+	float takeoff_height = -2;		 // default height for the takeoff
 	uint flag_takeoff = 0;
 	uint8_t nav_state;
 
 	/**
 	 * @brief messages
 	*/
-	VehicleLocalPosition message;
+	VehicleOdometry message;
 
 	/**
 	 * @brief Publisher
@@ -173,7 +173,7 @@ private:
 	 * @brief Subscriber
 	*/
 	rclcpp::Subscription<VehicleStatus>::SharedPtr vehicle_status_sub_;
-	rclcpp::Subscription<VehicleLocalPosition>::SharedPtr vehicle_position_sub_;
+	rclcpp::Subscription<VehicleOdometry>::SharedPtr vehicle_position_sub_;
 
 	/**
 	 * @brief Points list
@@ -185,7 +185,7 @@ private:
 	void publish_offboard_control_mode();
 	void publish_vehicle_command(uint16_t command, float param1 = std::nanf(""), float param2 = std::nanf(""), float param3 = std::nanf(""), float param4 = std::nanf(""), float param5 = std::nanf(""), float param6 = std::nanf(""), float param7 = std::nanf(""));
 	void vehicle_status_callback(const VehicleStatus & msg);
-	void vehicle_position_callback(const VehicleLocalPosition & msg);
+	void vehicle_position_callback(const VehicleOdometry & msg);
 	void publish_trajectory_setpoint(offboard_point_list* point);
 	void publish_trajectory(std::vector<offboard_point_list *> point_list);
 	void publish_velocity_constraints();
@@ -260,8 +260,8 @@ void OffboardControl::publish_offboard_control_mode()
 	msg.position = true;
 	msg.velocity = false;
 	msg.acceleration = false;
-	msg.attitude = true;
-	msg.body_rate = false;
+	// msg.attitude = true;
+	// msg.body_rate = false;
 	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
 	offboard_control_mode_publisher_->publish(msg);
 }
@@ -315,19 +315,19 @@ void OffboardControl::publish_vehicle_command(uint16_t command, float param1, fl
 void OffboardControl::vehicle_status_callback(const VehicleStatus & msg)
 {
 	this->nav_state = msg.nav_state;
-	fprintf(stdout, "\n---------------------------------------------------------------------------\n");
+	fprintf(stdout, "---------------------------------------------------------------------------\n");
 	RCLCPP_INFO(this->get_logger(), "\n\nArming state: %i, Navigation state: %i\n\n", msg.arming_state, msg.nav_state);
-	fprintf(stdout, "\n---------------------------------------------------------------------------\n");
+	fprintf(stdout, "\n---------------------------------------------------------------------------");
 }
 
 /**
  * @brief vehicle position callback
 */
-void OffboardControl::vehicle_position_callback(const VehicleLocalPosition & msg)
+void OffboardControl::vehicle_position_callback(const VehicleOdometry & msg)
 {	
 	this->message = msg;
-	RCLCPP_INFO(this->get_logger(),"\nX: %f\nY: %f\nZ: %f", message.x, message.y, message.z);
-	RCLCPP_INFO(this->get_logger(),"\nVX: %f\nVY: %f\nVZ: %f", message.vx, message.vy, message.vz);
+	// RCLCPP_INFO(this->get_logger(),"\nX: %f\nY: %f\nZ: %f", message.position[0], message.position[1], message.position[2]);
+	// RCLCPP_INFO(this->get_logger(),"\nVX: %f\nVY: %f\nVZ: %f", message.velocity[0], message.velocity[1], message.velocity[2]);
 }
 
 /**
@@ -349,7 +349,7 @@ void OffboardControl::publish_trajectory_setpoint(offboard_point_list* point)
 */
 void OffboardControl::publish_trajectory(std::vector<offboard_point_list *> point_list)
 {
-	float dist = distance(this->message.x, this->message.y, this->message.z, point_list[this->index]->position_x, point_list[this->index]->position_y, point_list[this->index]->position_z);
+	float dist = distance(this->message.position[0], this->message.position[1], this->message.position[2], point_list[this->index]->position_x, point_list[this->index]->position_y, point_list[this->index]->position_z);
 	
 	if(dist > this->tolerance){
 		this->publish_trajectory_setpoint(point_list[this->index]);
@@ -366,7 +366,7 @@ void OffboardControl::publish_trajectory(std::vector<offboard_point_list *> poin
  */
 void OffboardControl::check_takeoff(){
 	
-	float dist = distance(this->message.x, this->message.y, this->message.z, 0, 0, this->takeoff_height);
+	float dist = distance(this->message.position[0], this->message.position[1], this->message.position[2], 0, 0, this->takeoff_height);
 	
 	if(dist < this->tolerance && this->nav_state == 4 && this->flag_takeoff == 0){
 		this->flag_takeoff = 1;
