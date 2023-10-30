@@ -81,7 +81,7 @@ public:
 
 			check_takeoff();
 	
-			if(this->flag_takeoff == 1 && distance(this->message.x, 0., 0., 2., 0., 0.) > this->tolerance){
+			if(this->flag_takeoff == 1 && distance(this->message.position[0], 0., 0., 2., 0., 0.) > this->tolerance){
 				publish_offboard_control_mode();
 				publish_velocity_setpoint(0.5,0.,0.,0.);
 				this->flag_to_land = offboard_setpoint_counter_ + 10;
