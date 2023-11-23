@@ -28,5 +28,3 @@
 - [Mocap Simulation](docs/mocap_simu.md)
 
 - [UWB simulation](docs/uwb_simu.md)
-
-<!-- - [Obstacle avoidance simulation]() -->

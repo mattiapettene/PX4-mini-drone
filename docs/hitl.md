@@ -54,14 +54,7 @@ On the companion board, launch ROS2:
 cd ~/PX4-mini-drone
 source ~/microros_ws/install/local_setup.bash
 source install/local_setup.bash
-ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyS0 -b 921600 ROS_DOMAIN_ID=0
-```
-
-Alternatively it is possible to launch the following:
-
-``` bash
-cd ~/PX4-mini-drone
-./MicroXRCE.sh
+sudo MicroXRCEAgent serial --dev /dev/ttyAMA0 -b 921600 ROS_DOMAIN_ID=0
 ```
 
 At this point, always on the companion board, it is possible to navigate to the folder where the scripts are contained and launch them in the same way as in the SITL simulation.

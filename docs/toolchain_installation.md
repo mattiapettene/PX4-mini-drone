@@ -84,8 +84,8 @@ sudo apt-get install ros-humble-gazebo-ros-pkgs
 
 ``` bash
 cd ~
-mkdir -p ~/ws_offboard_control/src/
-cd ~/ws_offboard_control/src/
+mkdir -p ~/ws_combined_sensor/src/
+cd ~/ws_combined_sensor/src/
 ```
 
 ``` bash
@@ -96,6 +96,7 @@ git clone https://github.com/PX4/px4_msgs.git
 - Build them
 
 ``` bash
+cd ~/ws_combined_sensor/
 colcon build
 source install/local_setup.bash
 ```
@@ -137,9 +138,10 @@ cd ~/px4-offboard
 colcon build
 ```
 
-- Start the micro-ros-agent
+- Start the Micro-XRCE-DDS-Agent
 
 ``` bash
+cd ~/Micro-XRCE-DDS-Agent
 export ROS_DOMAIN_ID=0
 export PYTHONOPTIMIZE=1
 MicroXRCEAgent udp4 -p 8888
