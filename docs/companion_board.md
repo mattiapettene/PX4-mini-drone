@@ -2,6 +2,12 @@
 
 ## Raspberry PI 4
 
+### Wiring
+
+TO DO
+
+### Ubuntu Setup on RPi
+
 Install raspi-config:
 
 ```bash

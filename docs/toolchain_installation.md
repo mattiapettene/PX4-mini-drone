@@ -98,7 +98,7 @@ git clone https://github.com/PX4/px4_msgs.git
 ``` bash
 cd ~/ws_combined_sensor/
 colcon build
-source install/local_setup.bash
+source ~/ws_combined_sensor/install/setup.bash && echo "source ~/ws_combined_sensor/install/setup.bash" >> .bashrc
 ```
 
 ### PX4-FastDDS Bridge
