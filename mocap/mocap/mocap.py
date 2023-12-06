@@ -24,9 +24,9 @@ class OffboardControl(Node):
             depth=1
         )
 
-        # chenge topic name
-        self.mocap_pose_subscriber_ = self.create_subscription(Pose, 
-                                                                    "/to_change", self.get_mocap_pose, 1)
+        # # chenge topic name
+        # self.mocap_pose_subscriber_ = self.create_subscription(Pose, 
+        #                                                             "/to_change", self.get_mocap_pose, 1)
         self.vehicle_local_position_subscriber_ = self.create_subscription(VehicleOdometry, 
                                                                     "/fmu/out/vehicle_odometry", self.get_vehicle_position, qos_profile)
         self.vehicle_status_subscriber_ = self.create_subscription(VehicleStatus, 
