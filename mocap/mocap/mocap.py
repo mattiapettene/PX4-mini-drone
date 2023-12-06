@@ -29,8 +29,8 @@ class OffboardControl(Node):
         #                                                             "/to_change", self.get_mocap_pose, 1)
         self.vehicle_local_position_subscriber_ = self.create_subscription(VehicleOdometry, 
                                                                     "/fmu/out/vehicle_odometry", self.get_vehicle_position, qos_profile)
-        self.vehicle_status_subscriber_ = self.create_subscription(VehicleStatus, 
-                                                                    "/fmu/out/vehicle_status", self.get_vehicle_status, qos_profile)
+        # self.vehicle_status_subscriber_ = self.create_subscription(VehicleStatus, 
+        #                                                             "/fmu/out/vehicle_status", self.get_vehicle_status, qos_profile)
         self.offboard_control_mode_publisher_ = self.create_publisher(OffboardControlMode,
                                                                     "/fmu/in/offboard_control_mode", qos_profile)
         self.trajectory_setpoint_publisher_ = self.create_publisher(TrajectorySetpoint,
@@ -46,9 +46,9 @@ class OffboardControl(Node):
 
         self.offboard_setpoint_counter_ = 0
         self.land_to_initial_position = False
-        self.print_position = False
+        self.print_position = True
         self.print_velocity = False
-        self.print_status = False
+        self.print_status = True
 
         # Vehicle actual position (m)
         self.x = 0.0
@@ -56,13 +56,13 @@ class OffboardControl(Node):
         self.z = 0.0
 
         # Point list tajectory definition
-        p1 = Point(0.0, 0.0, -2.5)
-        p2 = Point(0.0, -1.0, -2.5)
+        p1 = Point(0.0, 0.0, -1.5)
+        p2 = Point(0.0, -1.0, -1.5)
         self.point_list = [p1, p2]
         
-        self.range = 0.3 # Set tolerance range to 30 cm
+        self.range = 0.50 # Set tolerance range to 5 cm
 
-        self.status = 0
+        self.actual_status = 0
         self.takeoff_finished = 0
         self.landing_flag = 0 
 
@@ -70,8 +70,6 @@ class OffboardControl(Node):
         self.position_mocap = Pose
 
     def timer_callback(self):
-
-        self.publish_pos_mocap()
 
         # Arm and takeoff
         if (self.offboard_setpoint_counter_ == 0):
@@ -82,11 +80,12 @@ class OffboardControl(Node):
             # Arm the vehicle and takeoff
             self.arm()
             self.takeoff()
-            
-            self.multilateration()      
 
+        if (self.distance(self.point_list[0]) < 0.50):
+            self.actual_status = 4
+            
         # Check takeoff finished
-        if (self.offboard_setpoint_counter_ >= 10 and self.status == 4 and self.takeoff_finished == 0):
+        if (self.offboard_setpoint_counter_ >= 10 and self.actual_status == 4 and self.takeoff_finished == 0):
             self.get_logger().info("Takeoff completed")
             self.takeoff_finished = 1
         
@@ -129,7 +128,7 @@ class OffboardControl(Node):
     
     # Takeoff
     def takeoff(self):
-        self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_TAKEOFF, math.nan, math.nan, math.nan, math.nan, math.nan, 1.0)
+        self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_TAKEOFF, math.nan, math.nan, math.nan, math.nan, math.nan, 1.5)
         self.get_logger().info("Takeoff command sent")
 
     # Loiter
@@ -221,11 +220,11 @@ class OffboardControl(Node):
 
 
     # Get vehicle status
-    def get_vehicle_status(self, msg):
-        self.status = msg.nav_state
+    # def get_vehicle_status(self, msg):
+    #     self.actual_status = msg.nav_state
         
-        if(self.print_status):
-            self.get_logger().info("Actual status: {:d}".format(self.status))
+    #     if(self.print_status):
+    #         self.get_logger().info("Actual status: {:d}".format(self.actual_status))
 
 
     # Distance between a point and the current position

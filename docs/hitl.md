@@ -52,8 +52,6 @@ On the companion board, launch ROS2:
 
 ``` bash
 cd ~/PX4-mini-drone
-source ~/microros_ws/install/local_setup.bash
-source install/local_setup.bash
 sudo MicroXRCEAgent serial --dev /dev/ttyAMA0 -b 921600 ROS_DOMAIN_ID=0
 ```
 
