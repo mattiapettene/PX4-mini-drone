@@ -59,6 +59,8 @@ class OffboardControl(Node):
         p1 = Point(0.0, 0.0, -1.5)
         p2 = Point(0.0, -1.0, -1.5)
         self.point_list = [p1, p2]
+
+        self.height_max = p1
         
         self.range = 0.50 # Set tolerance range to 5 cm
 
@@ -81,7 +83,7 @@ class OffboardControl(Node):
             self.arm()
             self.takeoff()
 
-        if (self.distance(self.point_list[0]) < 0.50):
+        if (self.distance(self.height_max) < 0.50):
             self.actual_status = 4
             
         # Check takeoff finished
