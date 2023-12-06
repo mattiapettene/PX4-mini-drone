@@ -35,7 +35,7 @@ public:
 		/**
 		 * @brief Create subscriber
 		*/
-		vehicle_pose_sub = this->create_subscription<geometry_msgs::msg::PoseStamped>("/Car/pose",qos,std::bind(&MocapPX4Bridge::poseCallback,this,_1));
+		vehicle_pose_sub = this->create_subscription<geometry_msgs::msg::PoseStamped>("/Drone/pose",qos,std::bind(&MocapPX4Bridge::poseCallback,this,_1));
 		
 		/**
 		 * @brief Create publisher
