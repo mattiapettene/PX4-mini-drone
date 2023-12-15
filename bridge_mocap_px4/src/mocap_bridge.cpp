@@ -41,14 +41,7 @@ public:
 		 * @brief Create publisher
 		*/
 		vehicle_odometry_pub = this->create_publisher<px4_msgs::msg::VehicleOdometry>("/fmu/in/vehicle_visual_odometry",qos);
-		vehicle_mocap_pub = this->create_publisher<px4_msgs::msg::VehicleOdometry>("/fmu/in/vehicle_mocap_odometry",qos);
-
-		// auto timer_callback = [this]() -> void {
-		// 	std::cout << "ciao" << std::endl;
-
-		// };
-
-		// timer_ = this->create_wall_timer(100ms, timer_callback);		
+		// vehicle_mocap_pub = this->create_publisher<px4_msgs::msg::VehicleOdometry>("/fmu/in/vehicle_mocap_odometry",qos);
 
 	}
 
@@ -56,7 +49,7 @@ private:
 
 	rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr vehicle_pose_sub;
 	rclcpp::Publisher<px4_msgs::msg::VehicleOdometry>::SharedPtr vehicle_odometry_pub;
-	rclcpp::Publisher<px4_msgs::msg::VehicleOdometry>::SharedPtr vehicle_mocap_pub;
+	// rclcpp::Publisher<px4_msgs::msg::VehicleOdometry>::SharedPtr vehicle_mocap_pub;
 
 	void poseCallback(const geometry_msgs::msg::PoseStamped::UniquePtr);
 };
@@ -87,7 +80,7 @@ void MocapPX4Bridge::poseCallback(const geometry_msgs::msg::PoseStamped::UniqueP
 	// 			 "Z: " << vehicle_odometry_Msg.position[2] << "\n";
 
 	vehicle_odometry_pub -> publish(vehicle_odometry_Msg);
-	vehicle_mocap_pub -> publish(vehicle_odometry_Msg);
+	// vehicle_mocap_pub -> publish(vehicle_odometry_Msg);
 }
 
 int main(int argc, char * argv[])
