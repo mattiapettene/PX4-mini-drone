@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'mocap = mocap.mocap:main',
+            'mocap_vel = mocap.mocap_vel:main',
         ],
     },
 )
