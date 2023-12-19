@@ -1,6 +1,8 @@
 import rclpy
 import numpy as np
 import math
+import matplotlib.pyplot as plt
+import pandas as pd
 from rclpy.node import Node
 from rclpy.clock import Clock
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy, QoSDurabilityPolicy
@@ -31,8 +33,8 @@ class OffboardControl(Node):
                                                                        "/uwb_ranging", self.uwb_ranging, 1)
         self.vehicle_local_position_subscriber_ = self.create_subscription(VehicleOdometry, 
                                                                        "/fmu/out/vehicle_odometry", self.get_vehicle_position, qos_profile)
-        self.vehicle_status_subscriber_ = self.create_subscription(VehicleStatus, 
-                                                                       "/fmu/out/vehicle_status", self.get_vehicle_status, qos_profile)
+        # self.vehicle_status_subscriber_ = self.create_subscription(VehicleStatus, 
+        #                                                                "/fmu/out/vehicle_status", self.get_vehicle_status, qos_profile)
         self.offboard_control_mode_publisher_ = self.create_publisher(OffboardControlMode,
                                                                         "/fmu/in/offboard_control_mode", qos_profile)
         self.trajectory_setpoint_publisher_ = self.create_publisher(TrajectorySetpoint,
@@ -58,13 +60,14 @@ class OffboardControl(Node):
         self.z = 0.0
 
         # Point list tajectory definition
-        p1 = Point(0.0, 0.0, -2.5)
-        p2 = Point(0.0, -1.0, -2.5)
+        p1 = Point(0.0, 0.0, -2.0)
+        p2 = Point(0.0, -1.0, -2.0)
         self.point_list = [p1, p2]
         
         self.range = 0.3 # Set tolerance range to 30 cm
+        self.height_max = p1
 
-        self.status = 0
+        self.actual_status = 0
         self.takeoff_finished = 0
         self.landing_flag = 0 
 
@@ -75,6 +78,15 @@ class OffboardControl(Node):
         self.anchors_id = [None] * self.n_anchors
         self.ground_flag = 0
         self.ground_position = [None]
+
+        # Plots
+        self.xgps_vec = []
+        self.ygps_vec = []
+        self.zgps_vec = []
+
+        self.xuwb_vec = []
+        self.yuwb_vec = []
+        self.zuwb_vec = []
 
     def timer_callback(self):
 
@@ -90,10 +102,13 @@ class OffboardControl(Node):
             self.arm()
             self.takeoff()
             
-            self.multilateration()      
+            self.multilateration()   
+            
+        if (self.distance(self.height_max) < 0.50):
+            self.actual_status = 4   
 
         # Check takeoff finished
-        if (self.offboard_setpoint_counter_ >= 10 and self.status == 4 and self.takeoff_finished == 0):
+        if (self.offboard_setpoint_counter_ >= 10 and self.actual_status == 4 and self.takeoff_finished == 0):
             self.get_logger().info("Takeoff completed")
             self.takeoff_finished = 1
         
@@ -117,6 +132,7 @@ class OffboardControl(Node):
         if(abs(self.z) <= self.range and self.landing_flag == 1):
             self.get_logger().info("Final position: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
             self.disarm()
+            self.plot()
             rclpy.shutdown()
 
         self.offboard_setpoint_counter_ += 1
@@ -332,17 +348,46 @@ class OffboardControl(Node):
         
         msg.position[0] = - drone_position[0]   #x
         msg.position[1] = - drone_position[1]   #y
-        #msg.position[2] = - drone_position[2]   #z
-        msg.position[2] = 10  #z
+        msg.position[2] = - drone_position[2]   #z
 
         self.uwb_position_publisher_.publish(msg) 
 
         # Print drone coordinates from UWB
-        print("Posizione del drone:")
-        print("x =", - drone_position[0])
-        print("y =", - drone_position[1])
-        print("z =", - drone_position[2])
-        
+        # print("Posizione del drone:")
+        # print("x =", - drone_position[0])
+        # print("y =", - drone_position[1])
+        # print("z =", - drone_position[2])
+
+        self.xgps_vec.append(self.x)
+        self.ygps_vec.append(self.y)
+        self.zgps_vec.append(self.z)
+
+        self.xuwb_vec.append(- drone_position[0])
+        self.yuwb_vec.append(- drone_position[1])
+        self.zuwb_vec.append(- drone_position[2])
+
+
+    def plot(self):
+
+        plt.figure(1)
+        plt.title('x position')
+        plt.plot(self.xgps_vec)
+        plt.plot(self.xuwb_vec)
+        plt.legend(['x_gps', 'x_uwb'])
+
+        plt.figure(2)
+        plt.title('y position')
+        plt.plot(self.ygps_vec)
+        plt.plot(self.yuwb_vec)
+        plt.legend(['y_gps', 'y_uwb'])
+
+        plt.figure(3)
+        plt.title('z position')
+        plt.plot(self.zgps_vec)
+        plt.plot(self.zuwb_vec)
+        plt.legend(['z_gps', 'z_uwb'])
+
+        plt.show()
 
 
 # Define a class Point 
