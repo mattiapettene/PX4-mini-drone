@@ -46,7 +46,7 @@ class OffboardControl(Node):
 
         self.offboard_setpoint_counter_ = 0
         self.land_to_initial_position = False
-        self.print_position = True
+        self.print_position = False
         self.print_velocity = False
         self.print_status = True
 
@@ -57,7 +57,7 @@ class OffboardControl(Node):
 
         # Point list tajectory definition
         p1 = Point(0.0, 0.0, -1.5)
-        p2 = Point(0.0, -1.0, -1.5)
+        p2 = Point(3.0, 0.0, -1.5)
         self.point_list = [p1, p2]
 
         self.height_max = p1
@@ -90,10 +90,6 @@ class OffboardControl(Node):
         if (self.offboard_setpoint_counter_ >= 10 and self.actual_status == 4 and self.takeoff_finished == 0):
             self.get_logger().info("Takeoff completed")
             self.takeoff_finished = 1
-            
-        if (self.offboard_setpoint_counter_ >= 10):
-            self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_DO_SET_MODE, 1., 6.)
-            self.publish_offboard_control_mode()
         
         # Trajectory setpoint
         if (self.takeoff_finished == 1 and self.point_list):

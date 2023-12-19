@@ -8,9 +8,13 @@ The following parameters must be set to use external position information with E
 | --- | --- |
 | `UXRCE_DDS_CFG`| a desired port on your flight controller|
 | `ser_tel1_baud`| `921600`|
-| `EKF2_EV_CTRL` | Select *horizontal position fusion*, *vertical vision fusion*, and *yaw fusion*. |
+| `EKF2_EV_CTRL` | Select *horizontal position fusion*, *vertical vision fusion* |
 | `EKF2_HGT_REF` | Set to *Vision* to use the vision as the reference source for altitude estimation. |
 | `EKF2_EV_POS_X,Y,Z` | Set the position of the vision sensor (or MoCap markers) with respect to the robot's body frame. |
 | `EKF2_GPS_CTRL`| Disable GPS sensor fusion|
 | `EKF2_BARO_CTRL`| Disable Barometer sensor fusion|
 | `EKF2_RNG_CTRL`| Disable range finder sensor fusion|
+
+## Estimated position
+
+The estimated position coming from the
