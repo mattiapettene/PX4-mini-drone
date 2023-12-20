@@ -7,6 +7,14 @@
 
 ## Set-up
 
+## Clone the repository and build the code
+
+```bash
+git clone https://github.com/mattiapettene/PX4-mini-drone.git
+colcon build
+source ~/PX4-mini-drone/install/setup.bash && echo "source ~/PX4-mini-drone/install/setup.bash" >> .bashrc
+```
+
 ### Install [ROS2-Humble](https://docs.ros.org/en/humble/index.html#)
 
 - [Installation Ubuntu (Debian)](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html)

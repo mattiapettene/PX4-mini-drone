@@ -2,18 +2,23 @@
 
 [![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
-## Collaborators
+## Introduction
 
-- [Giacomo Corradini](https://github.com/GiacomoCorradini)
-- [Mattia Pettene](https://github.com/mattiapettene)
+This project aim is to perform an offboard application using three different positioning system:
+
+- *Global positioning system (GPS)*
+- *Motion capture*
+- *Ultra wide band (UWB)*
+
+<!-- ## Results
+
+All the results and discussions are reported in the following paper: []() -->
 
 ## Guide
 
 - [Toolchain installation](docs/toolchain_installation.md)
 
 - [Create a package](docs/create_pakage.md)
-
-- [How to build the code](docs/build.md)
 
 - [Software in the loop simulation](docs/sitl.md)
 

@@ -1,6 +1,6 @@
 # GPS Simulation
 
-Start the environment in gazebo and the PX4-FastDDS Bridge:
+Start the environment in gazebo and the Micro-XRCE-DDS-Agent:
 
 ```bash
 cd ~/PX4-mini-drone
@@ -9,7 +9,7 @@ cd ~/PX4-mini-drone
 
 ## C++ simulation
 
-Start the simulation, you can choose two different types:
+Start the simulation, you can choose two different control strategy:
 
 * point target:
   
@@ -26,3 +26,17 @@ Start the simulation, you can choose two different types:
   ```
 
 ## Python simulation
+
+* point target:
+  
+  ```bash
+  cd ~/PX4-mini-drone
+  ./gps/gps_cpp/run_point.sh
+  ```
+
+* velocity target:
+  
+  ```bash
+  cd ~/PX4-mini-drone
+  ./gps/gps_cpp/run_vel.sh
+  ```
