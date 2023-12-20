@@ -46,7 +46,7 @@ class OffboardControl(Node):
 
         self.offboard_setpoint_counter_ = 0
         self.land_to_initial_position = False
-        self.print_position = False
+        self.print_position = True
         self.print_velocity = False
         self.print_status = False 
 
@@ -185,6 +185,7 @@ class OffboardControl(Node):
             msg.position = [point[0].x, point[0].y, point[0].z]
             msg.velocity = [self.velx, self.vely, self.velz]
             msg.yaw = math.nan
+            msg.yawspeed = math.nan
 
             if self.distance(point[0]) <= range:    # point is reached
                 self.get_logger().info("Position reached: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
