@@ -7,6 +7,7 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
+#include <string.h>
 
 #include <px4_msgs/msg/vehicle_odometry.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
@@ -35,21 +36,22 @@ public:
 		/**
 		 * @brief Create subscriber
 		*/
-		vehicle_pose_sub = this->create_subscription<geometry_msgs::msg::PoseStamped>("/Drone/pose",qos,std::bind(&MocapPX4Bridge::poseCallback,this,_1));
+		vehicle_pose_sub = this->create_subscription<geometry_msgs::msg::PoseStamped>(topic_name,qos,std::bind(&MocapPX4Bridge::poseCallback,this,_1));
 		
 		/**
 		 * @brief Create publisher
 		*/
 		vehicle_odometry_pub = this->create_publisher<px4_msgs::msg::VehicleOdometry>("/fmu/in/vehicle_visual_odometry",qos);
-		// vehicle_mocap_pub = this->create_publisher<px4_msgs::msg::VehicleOdometry>("/fmu/in/vehicle_mocap_odometry",qos);
 
 	}
 
 private:
 
+	std::string topic_name = "/Drone/pose";
+	bool flag_print = false;
+
 	rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr vehicle_pose_sub;
 	rclcpp::Publisher<px4_msgs::msg::VehicleOdometry>::SharedPtr vehicle_odometry_pub;
-	// rclcpp::Publisher<px4_msgs::msg::VehicleOdometry>::SharedPtr vehicle_mocap_pub;
 
 	void poseCallback(const geometry_msgs::msg::PoseStamped::UniquePtr);
 };
@@ -75,12 +77,11 @@ void MocapPX4Bridge::poseCallback(const geometry_msgs::msg::PoseStamped::UniqueP
 	vehicle_odometry_Msg.q[2] = -poseMsg->pose.orientation.y; // Y = -Y
 	vehicle_odometry_Msg.q[3] = poseMsg->pose.orientation.z;  // Z = -Z
 
-	// std::cout << "X: " << vehicle_odometry_Msg.position[0] << '\t' <<
-	// 			 "Y: " << vehicle_odometry_Msg.position[1] << '\t' <<
-	// 			 "Z: " << vehicle_odometry_Msg.position[2] << "\n";
+	if (flag_print){
+		std::cout << "X: " << vehicle_odometry_Msg.position[0] << '\t' << "Y: " << vehicle_odometry_Msg.position[1] << '\t' << "Z: " << vehicle_odometry_Msg.position[2] << "\n";
+	}
 
 	vehicle_odometry_pub -> publish(vehicle_odometry_Msg);
-	// vehicle_mocap_pub -> publish(vehicle_odometry_Msg);
 }
 
 int main(int argc, char * argv[])
