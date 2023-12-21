@@ -67,7 +67,7 @@ class OffboardControl(Node):
 
         self.height_max = p1
         
-        self.range = 0.20 # Set tolerance range to 50 cm
+        self.range = 0.35 # Set tolerance range to 50 cm
 
         self.actual_status = 0
         self.takeoff_finished = 0
@@ -115,7 +115,7 @@ class OffboardControl(Node):
             self.landing_flag = 1
         
         # Disarm
-        if(abs(self.z) <= 0.20 and self.landing_flag == 1):
+        if(abs(self.z) <= 0.25 and self.landing_flag == 1):
             self.get_logger().info("Final position: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
             self.disarm()
             rclpy.shutdown()
@@ -202,7 +202,7 @@ class OffboardControl(Node):
 
 
     # Publish vehicle commands
-    def publish_vehicle_command(self, command, param1=0.0, param2=0.0, param3=0.0, param4=0.0, param5=0.0, param6=0.0, param7=0.0):
+    def publish_vehicle_command(self, command, param1=math.nan, param2=math.nan, param3=math.nan, param4=math.nan, param5=math.nan, param6=math.nan, param7=math.nan):
         msg = VehicleCommand()
         msg.param1 = param1
         msg.param2 = param2
