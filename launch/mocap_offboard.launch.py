@@ -18,7 +18,7 @@ def generate_launch_description():
             emulate_tty=True,
             arguments=[
                 "--server", "192.168.1.216",
-                "--rate", "100",
+                "--rate", "120",
             ],
         ),
         Node(
