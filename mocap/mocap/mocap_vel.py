@@ -67,7 +67,7 @@ class OffboardControl(Node):
 
         self.height_max = p1
         
-        self.range = 0.50 # Set tolerance range to 50 cm
+        self.range = 0.20 # Set tolerance range to 50 cm
 
         self.actual_status = 0
         self.takeoff_finished = 0
@@ -115,7 +115,7 @@ class OffboardControl(Node):
             self.landing_flag = 1
         
         # Disarm
-        if(abs(self.z) <= self.range and self.landing_flag == 1):
+        if(abs(self.z) <= 0.20 and self.landing_flag == 1):
             self.get_logger().info("Final position: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
             self.disarm()
             rclpy.shutdown()
@@ -186,6 +186,7 @@ class OffboardControl(Node):
 
             if self.distance(point[0]) <= range:    # point is reached
                 self.get_logger().info("Position reached: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
+                self.loiter()
                 point.pop(0)    # delete the reached point from the list
 
         msg.timestamp = int(Clock().now().nanoseconds / 1000)   # time in microseconds
