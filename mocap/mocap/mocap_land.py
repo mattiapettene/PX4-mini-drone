@@ -109,15 +109,15 @@ class OffboardControl(Node):
         # Land
         if(len(self.point_list) == 0 and self.landing_flag == 0):  # when the list is empty all points are reached
 
-            if(self.land_to_initial_position == False):
-                self.land()
-            else:
-                self.land_to_initial_pos()
+            # if(self.land_to_initial_position == False):
+            #     self.land()
+            # else:
+            #     self.land_to_initial_pos()
             
             self.landing_flag = 1
         
         # Disarm
-        if(abs(self.z) <= self.range and self.landing_flag == 1):
+        if(abs(self.z) <= 0.2 and self.landing_flag == 1):
             self.get_logger().info("Final position: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
             self.disarm()
             rclpy.shutdown()
@@ -144,7 +144,7 @@ class OffboardControl(Node):
 
     # Loiter
     def loiter(self):
-        self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LOITER_TIME, 5.0)
+        self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LOITER_TIME, 3.0)
         self.get_logger().info("Loitering around mission")
     
     # Land
@@ -189,6 +189,7 @@ class OffboardControl(Node):
 
             if self.distance(point[0]) <= range:    # point is reached
                 self.get_logger().info("Position reached: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
+                self.loiter()
                 point.pop(0)    # delete the reached point from the list
 
         msg.timestamp = int(Clock().now().nanoseconds / 1000)   # time in microseconds
