@@ -72,6 +72,7 @@ class OffboardControl(Node):
         self.actual_status = 0
         self.takeoff_finished = 0
         self.landing_flag = 0
+        self.flag_counter_before_land = 0
 
         # UWB anchors position
         # self.position_mocap = Pose
@@ -104,8 +105,11 @@ class OffboardControl(Node):
             self.publish_offboard_control_mode()
             self.publish_trajectory_setpoint()
 
+        if(len(self.point_list) == 0 and self.flag_counter_before_land == 0):
+            self.flag_counter_before_land = self.offboard_setpoint_counter_ + 50
+
         # Land
-        if(len(self.point_list) == 0 and self.landing_flag == 0):  # when the list is empty all points are reached
+        if(len(self.point_list) == 0 and self.landing_flag == 0 and self.offboard_setpoint_counter_ == self.flag_counter_before_land):  # when the list is empty all points are reached
 
             if(self.land_to_initial_position == False):
                 self.land()
