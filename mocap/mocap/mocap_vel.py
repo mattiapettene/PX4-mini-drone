@@ -106,10 +106,12 @@ class OffboardControl(Node):
             self.publish_trajectory_setpoint()
 
         if(len(self.point_list) == 0 and self.flag_counter_before_land == 0):
-            self.flag_counter_before_land = self.offboard_setpoint_counter_ + 50
+            self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_DO_SET_MODE, 1., 6.)
+            self.publish_offboard_control_mode()
+            self.flag_counter_before_land = self.offboard_setpoint_counter_ + 200
 
         # Land
-        if(len(self.point_list) == 0 and self.landing_flag == 0 and self.offboard_setpoint_counter_ == self.flag_counter_before_land):  # when the list is empty all points are reached
+        if(len(self.point_list) == 0 and self.landing_flag == 0 and self.offboard_setpoint_counter_ >= self.flag_counter_before_land):  # when the list is empty all points are reached
 
             if(self.land_to_initial_position == False):
                 self.land()
@@ -146,7 +148,7 @@ class OffboardControl(Node):
 
     # Loiter
     def loiter(self):
-        self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LOITER_TIME, 5.0)
+        self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LOITER_TIME, 5.0, math.nan, math.nan, math.nan, math.nan, math.nan, -1.5)
         self.get_logger().info("Loitering around mission")
     
     # Land
