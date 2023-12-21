@@ -107,7 +107,7 @@ class OffboardControl(Node):
 
         if(len(self.point_list) == 0 and self.flag_counter_before_land == 0):
             self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_DO_SET_MODE, 1., 6.)
-            self.publish_offboard_control_mode()
+            self.loiter()
             self.flag_counter_before_land = self.offboard_setpoint_counter_ + 200
 
         # Land
