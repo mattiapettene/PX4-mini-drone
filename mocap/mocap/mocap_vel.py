@@ -167,8 +167,8 @@ class OffboardControl(Node):
 
     def publish_velocity_constraints(self):
         msg = VehicleConstraints() 
-        msg.speed_up = 0.4
-        msg.speed_down = 0.4
+        msg.speed_up = 0.1
+        msg.speed_down = 0.05
         msg.timestamp = int(Clock().now().nanoseconds / 1000) # time in microseconds
         self.vehicle_constraints_publisher_.publish(msg)
 
