@@ -89,19 +89,19 @@ class OffboardControl(Node):
 
             # Arm the vehicle and takeoff
             self.arm()
-            # self.takeoff()
+            self.takeoff()
 
-        # if (self.distance(self.height_max) < 0.50):
-        #     self.actual_status = 4
+        if (self.distance(self.height_max) < 0.50):
+            self.actual_status = 4
             
         # Check takeoff finished
-        # if (self.offboard_setpoint_counter_ >= 10 and self.actual_status == 4 and self.takeoff_finished == 0):
-        #     self.get_logger().info("Takeoff completed")
-        #     self.takeoff_finished = 1
+        if (self.offboard_setpoint_counter_ >= 10 and self.actual_status == 4 and self.takeoff_finished == 0):
+            self.get_logger().info("Takeoff completed")
+            self.takeoff_finished = 1
 
         # Trajectory setpoint
-        # if (self.takeoff_finished == 1 and self.point_list):
-        if (self.point_list):
+        if (self.takeoff_finished == 1 and self.point_list):
+        # if (self.point_list):
             self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_DO_SET_MODE, 1., 6.)
             self.publish_offboard_control_mode()
             self.publish_trajectory_setpoint()
