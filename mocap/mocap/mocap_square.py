@@ -55,10 +55,10 @@ class OffboardControl(Node):
 
         # Point list tajectory definition
         p1 = Point(0.0, 0.0, -1.5)
-        p2 = Point(0.0, 1.0, -1.5)
-        p3 = Point(2.0, 1.0, -1.5)
-        p4 = Point(2.0, -1.0, -1.5)
-        p5 = Point(0.0, -1.0, -1.5)
+        p2 = Point(0.0, 0.7, -1.5)
+        p3 = Point(2.0, 0.7, -1.5)
+        p4 = Point(2.0, -0.7, -1.5)
+        p5 = Point(0.0, -0.7, -1.5)
         p6 = Point(0.0, 0.0, -1.5)
         self.point_list = [p1, p2, p3, p4, p5, p6]
 
