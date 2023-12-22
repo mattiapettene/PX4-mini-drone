@@ -89,6 +89,9 @@ class OffboardControl(Node):
             # Arm the vehicle and takeoff
             self.arm()
             self.takeoff()
+
+        if (self.distance(self.height_max) < 0.50):
+            self.actual_status = 4
             
         # Check takeoff finished
         if (self.offboard_setpoint_counter_ >= 10 and self.actual_status == 4 and self.takeoff_finished == 0):
