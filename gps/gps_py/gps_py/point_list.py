@@ -43,7 +43,7 @@ class OffboardControl(Node):
         self.land_to_initial_position = False
         self.print_position = False
         self.print_velocity = False
-        self.print_status = False
+        self.print_status = True
 
         # Vehicle actual position (m)
         self.x = 0.0
@@ -58,6 +58,7 @@ class OffboardControl(Node):
         self.range = 1.0 # Set tolerance range to 100 cm
 
         self.status = 0
+        self.height_max = 2.0
         self.takeoff_finished = 0
         self.landing_flag = 0 
 
