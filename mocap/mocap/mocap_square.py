@@ -12,7 +12,6 @@ from px4_msgs.msg import VehicleCommand
 from px4_msgs.msg import VehicleStatus
 from px4_msgs.msg import VehicleOdometry
 from px4_msgs.msg import VehicleConstraints
-# from geometry_msgs.msg import Pose
 
 class OffboardControl(Node):
 
@@ -90,7 +89,7 @@ class OffboardControl(Node):
             self.arm()
             self.takeoff()
 
-        if (self.distance(self.height_max) < 0.50):
+        if (self.distance(self.height_max) < 0.50 and self.actual_status != 17):
             self.actual_status = 4
             
         # Check takeoff finished
@@ -121,7 +120,7 @@ class OffboardControl(Node):
             self.landing_flag = 1
         
         # Disarm
-        if(abs(self.z) <= 0.25 and self.landing_flag == 1):
+        if(abs(self.z) <= 0.25 and self.landing_flag == 1 and self.actual_status != 18):
             self.get_logger().info("Final position: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
             self.disarm()
             rclpy.shutdown()
