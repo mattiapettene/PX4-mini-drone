@@ -51,11 +51,11 @@ class OffboardControl(Node):
         self.z = 0.0
 
         # Point list tajectory definition
-        p1 = Point(0.0, 0.0, -2.5)
-        p2 = Point(3.0, 0.0, -2.5)
+        p1 = Point(0.0, 0.0, -2.0)
+        p2 = Point(4.0, 0.0, -2.0)
         self.point_list = [p1, p2]
         
-        self.range = 0.3 # Set tolerance range to 30 cm
+        self.range = 1.0 # Set tolerance range to 100 cm
 
         self.status = 0
         self.takeoff_finished = 0
@@ -72,7 +72,10 @@ class OffboardControl(Node):
 
             # Arm the vehicle and takeoff
             self.arm()
-            self.takeoff()         
+            self.takeoff()  
+
+        if (self.distance(self.height_max) < 0.70):
+            self.actual_status = 4  
 
         # Check takeoff finished
         if (self.offboard_setpoint_counter_ >= 10 and self.status == 4 and self.takeoff_finished == 0):
@@ -96,7 +99,7 @@ class OffboardControl(Node):
             self.landing_flag = 1
         
         # Disarm
-        if(abs(self.z) <= self.range and self.landing_flag == 1):
+        if(abs(self.z) <= 0.40 and self.landing_flag == 1):
             self.get_logger().info("Final position: ({:.2f}, {:.2f}, {:.2f})".format(self.x, self.y, self.z))
             self.disarm()
             rclpy.shutdown()
