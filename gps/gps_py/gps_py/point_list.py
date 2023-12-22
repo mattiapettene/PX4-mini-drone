@@ -121,7 +121,7 @@ class OffboardControl(Node):
     
     # Takeoff
     def takeoff(self):
-        self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_TAKEOFF, math.nan, math.nan, math.nan, math.nan, math.nan, math.nan, 3.0)
+        self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_TAKEOFF, math.nan, math.nan, math.nan, math.nan, math.nan, math.nan, 2.0)
         self.get_logger().info("Takeoff command sent")
 
     # Loiter
@@ -173,7 +173,7 @@ class OffboardControl(Node):
      
 
     # Publish vehicle commands
-    def publish_vehicle_command(self, command, param1=0.0, param2=0.0, param3=0.0, param4=0.0, param5=0.0, param6=0.0, param7=0.0):
+    def publish_vehicle_command(self, command, param1=math.nan, param2=math.nan, param3=math.nan, param4=math.nan, param5=math.nan, param6=math.nan, param7=math.nan):
         msg = VehicleCommand()
         msg.param1 = param1
         msg.param2 = param2
