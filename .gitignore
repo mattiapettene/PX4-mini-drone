@@ -7,5 +7,3 @@ send_udp.py
 my_iris
 __pycache__
 dati.csv
-bridge_uwb_px4/lazy_server.py
-bridge_uwb_px4/test.py
