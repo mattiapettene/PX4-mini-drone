@@ -5,6 +5,10 @@
 - ROS2 Humble
 - MicroXRCE
 
+## ATTENTION !!
+
+Pay attention which release you choose, the repository ```PX4-Autopilot```, ```px4_msgs``` and ```px4_ros_com``` must use the same release otherwise something could go worng.
+
 ## Set-up
 
 ## Clone the repository and build the code
