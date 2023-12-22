@@ -23,6 +23,7 @@ setup(
             'mocap = mocap.mocap:main',
             'mocap_vel = mocap.mocap_vel:main',
             'mocap_land = mocap.mocap_land:main',
+            'mocap_square = mocap.mocap_square:main',
         ],
     },
 )
