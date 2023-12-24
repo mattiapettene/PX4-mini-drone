@@ -237,16 +237,24 @@ class UwbPX4Bridge(Node):
 
         # - check on the skew term
         if(self.skew < 0.9 or self.skew > 1.1):
-            x_coord = math.nan
-            y_coord = math.nan
-            z_coord = math.nan
-        # - check on the uwb coordinate
-        self.reject_outliers(data_uwb[0],self.batch_uwb)
-
+            x_coord_uwb = math.nan
+            y_coord_uwb = math.nan
+            z_coord_uwb = math.nan
+        else:
+            # - check on the uwb coordinate
+            data_tmp = np.array(data_uwb)
+            batch_tmp = np.array(self.batch_uwb)
+            uwb_coord = np.zeros(3)
+            for i in range(3):
+                uwb_coord[i] = self.reject_outliers(data_tmp[i],batch_tmp[:,i])
+            x_coord_uwb = uwb_coord[0]
+            y_coord_uwb = uwb_coord[1]
+            z_coord_uwb = uwb_coord[2]
+            
         # - check on the mb1202 coordinate
-        elif(self.reject_outliers(data_mb1202,self.batch_mb1202) == math.nan):
+        z_coord_mb1202 = self.reject_outliers(data_mb1202,self.batch_mb1202)
 
-        return x_coord, y_coord, z_coord
+        return x_coord_uwb, y_coord_uwb, z_coord_uwb, z_coord_mb1202 
     
     def reject_outliers(value, data, m = 3.):
         data_tmp = np.array(data)
