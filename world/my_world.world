@@ -37,7 +37,7 @@
     <!-- ########################################################################################################## -->
     <!-- WALLS -->
 
-    <include>
+    <!-- <include>
       <name>grey_wall</name>
       <uri>model://grey_wall</uri>
       <pose>-7.6 0 0 0 0 -1.57</pose>
@@ -71,12 +71,12 @@
       <name>grey_wall6</name>
       <uri>model://grey_wall</uri>
       <pose>-3.75 -3.7 0 0 0 0</pose>
-    </include>
+    </include> -->
 
     <!-- ########################################################################################################## -->
     <!-- Anchors -->
     <model name="uwb_anchor0">
-      <pose>-7.5 -2 2 0 0 0</pose>
+      <pose>1.0100 0.979909 0.104384 0 0 0</pose>
       <static>1</static>
       <link name="link">
         <visual name="visual">
@@ -90,7 +90,7 @@
     </model>
 
     <model name="uwb_anchor1">
-      <pose>7.5 2 2 0 0 0</pose>
+      <pose>1 2 4 0 0 0</pose>
       <static>1</static>
       <link name="link">
         <visual name="visual">
@@ -104,7 +104,7 @@
     </model>
 
     <model name="uwb_anchor2">
-      <pose>-7.5 2 3 0 0 0</pose>
+      <pose>3 2 3 0 0 0</pose>
       <static>1</static>
       <link name="link">
         <visual name="visual">
@@ -118,7 +118,7 @@
     </model>
 
     <model name="uwb_anchor3">
-      <pose>7.5 -2 3 0 0 0</pose>
+      <pose>4 0 4 0 0 0</pose>
       <static>1</static>
       <link name="link">
         <visual name="visual">
@@ -132,7 +132,7 @@
     </model>
 
     <model name="uwb_anchor4">
-      <pose>-5 0 0.5 0 0 0</pose>
+      <pose>1.5 2.5 3.5 0 0 0</pose>
       <static>1</static>
       <link name="link">
         <visual name="visual">
@@ -146,7 +146,7 @@
     </model>
 
     <model name="uwb_anchor5">
-      <pose>5 0 0.5 0 0 0</pose>
+      <pose>1.5 0.5 3.5 0 0 0</pose>
       <static>1</static>
       <link name="link">
         <visual name="visual">
