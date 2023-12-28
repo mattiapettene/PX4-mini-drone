@@ -46,7 +46,7 @@ class Mb1202PX4Bridge(Node):
 
         # Save data to file
         self.f = open("data_mb1202.csv", "w")
-        self.f.write('z_mb1202')
+        self.f.write('z_mb1202\n')
 
         # timer callback
         self.timer_ = self.create_timer(timer_period, self.timer_callback)
@@ -58,7 +58,6 @@ class Mb1202PX4Bridge(Node):
         z_coord_mb1202 = self.lettura_mb1202(self.address)
 
         # outlier rejection
-        print(len(self.batch_mb1202))
         if len(self.batch_mb1202) != 0:
             z_coord_mb1202_rj = self.reject_outliers(z_coord_mb1202,self.batch_mb1202)
         else:
@@ -100,6 +99,7 @@ class Mb1202PX4Bridge(Node):
         
     def reject_outliers(value, data, m = 3.):
         data_tmp = np.array(data)
+        print(len(data_tmp))
         mva = sum(data_tmp)/len(data_tmp)
         std = np.sqrt(sum((data_tmp - mva)**2)/len(data_tmp))
         z_score = abs((value - mva)/std)
