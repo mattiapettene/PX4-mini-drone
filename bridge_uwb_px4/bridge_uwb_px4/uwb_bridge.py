@@ -173,6 +173,9 @@ class UwbPX4Bridge(Node):
         self.skew = 0
         self.tdoa = DTOA()
 
+        # initial position
+        self.pos_0 = [0.,0.,0.]
+
         # flag to print uwb estimated position
         self.flag_print = False
 
@@ -199,7 +202,7 @@ class UwbPX4Bridge(Node):
             self.batch_uwb.pop(0)
 
         # outlier rejection
-
+        self.data_outlier_rejection(data_uwb,z_coord_mb1202)
 
         # position and quaternion
         position = [x_coord_uwb,y_coord_uwb,z_coord_mb1202]
@@ -233,7 +236,7 @@ class UwbPX4Bridge(Node):
         
         return int(tx), int(rx), int(identity), float(distance)
     
-    def outlier_rejection(self,data_uwb,data_mb1202):
+    def data_outlier_rejection(self,data_uwb,data_mb1202):
 
         # - check on the skew term
         if(self.skew < 0.9 or self.skew > 1.1):
