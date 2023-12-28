@@ -11,11 +11,7 @@ from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy, QoSDur
 
 from px4_msgs.msg import VehicleOdometry
 
-
 class ReadLine:
-    '''
-        Class to read the serial port where the UWB module is connected
-    '''
     def __init__(self, s):
         self.buf = bytearray()
         self.s = s
@@ -45,12 +41,12 @@ class DTOA:
     def __init__(self):
 
         # initialize infrastructure
-        A_n1 = [0.00, 7.19, 2.15]
-        A_n2 = [0.00, 3.62, 3.15]
-        A_n3 = [0.00, 0.00, 2.15]
-        A_n4 = [4.79, 1.85, 3.15]
-        A_n5 = [4.79, 5.45, 2.15]
-        A_n6 = [3.00, 9.35, 3.15]
+        A_n1 = [0.083, 2.046, -0.074]
+        A_n2 = [1.725, 7.830, 0.040]
+        A_n3 = [4.730, 9.571, 0.005]
+        A_n4 = [5.764, 4.277, 0.103]
+        A_n5 = [5.584, 0.098, 0.111]
+        A_n6 = [0.0, 0.0, 0.0]
         self.A_n = np.array((A_n6, A_n1, A_n2, A_n3, A_n4, A_n5))
         self.n = len(self.A_n)
 
@@ -155,16 +151,13 @@ class UwbPX4Bridge(Node):
         # create publisher to vehicle visual odometry topic
         self.vehicle_pose_publisher_ = self.create_publisher(VehicleOdometry,"/fmu/in/vehicle_visual_odometry",qos_profile)    
 
-
         # batch of data for moving average filter (collect a batch of data of 50 elements)
-        self.batch_mb1202 = []
         self.batch_uwb = []
 
-        # sensor I2C address
-        self.address = 0x70
-
         # uwb module address
-        self.ser = serial.Serial(port='/dev/ttyACM0',baudrate=115200)
+        self.mesg = {}
+        self.ser = serial.Serial('/dev/ttyAMA0',921600,timeout=0)
+        self.rl = ReadLine(self.ser)
 
         # timer period callback
         timer_period = 0.1  # 100 milliseconds
@@ -178,11 +171,11 @@ class UwbPX4Bridge(Node):
 
         # flag to print uwb estimated position
         self.flag_print = False
-        self.flag_file = True
+        self.flag_file = False
 
         # Save data to file
-        self.f = open("data.txt", "w")
-        self.f.write('x_uwb,y_uwb,z_uwb,z_mb1202')
+        self.f = open("data_uwb.csv", "w")
+        self.f.write('x_uwb,y_uwb')
 
         # timer callback
         self.timer_ = self.create_timer(timer_period, self.timer_callback)
@@ -190,38 +183,28 @@ class UwbPX4Bridge(Node):
 
     def timer_callback(self):
 
-        # read mb1202 and obtain z coordinate
-        z_coord_mb1202 = self.lettura_mb1202(self.address)
-
         # read uwb module and get string data
-        # TO DO
+        times_uwb = self.lettura_uwb(self.rl)
 
         # calculate x,y,z coordinate and skew using tdoa algorithm
-        [x_coord_uwb,y_coord_uwb,z_coord_uwb,self.skew] = self.tdoa.TDoA(time,self.skew)
-        data_uwb = [x_coord_uwb,y_coord_uwb,z_coord_uwb]
+        [x_coord_uwb,y_coord_uwb,z_coord_uwb,self.skew] = self.tdoa.TDoA(times_uwb,self.skew)
+        data_uwb = [x_coord_uwb,y_coord_uwb]
 
-        [x_coord_uwb_rj, y_coord_uwb_rj, z_coord_uwb_rj, z_coord_mb1202_rj] = self.data_outlier_rejection(data_uwb,z_coord_mb1202)
+        [x_coord_uwb_rj, y_coord_uwb_rj] = self.data_outlier_rejection(data_uwb)
         
         # collect batch of data
-        if(z_coord_mb1202_rj != math.nan):
-            self.batch_mb1202.append(z_coord_mb1202_rj)
-
-        if(x_coord_uwb_rj != math.nan and y_coord_uwb_rj != math.nan and z_coord_uwb_rj != math.nan):
-            self.batch_uwb.append([x_coord_uwb_rj,y_coord_uwb_rj,z_coord_uwb_rj])
+        if(not(np.isnan(x_coord_uwb_rj)) and not(np.isnan(y_coord_uwb_rj))):
+            self.batch_uwb.append([x_coord_uwb_rj,y_coord_uwb_rj])
         
-        if(len(self.batch_mb1202) > 50):
-            self.batch_mb1202.pop(0)
+        if(len(self.batch_uwb) > 50):
             self.batch_uwb.pop(0)
 
         # outlier rejection
         if(self.flag_file):
-            self.f.write('{0},{1},{2},{3}\n'.format(x_coord_uwb_rj, y_coord_uwb_rj, z_coord_uwb_rj, z_coord_mb1202_rj))
+            self.f.write('{0},{1},{2},{3}\n'.format(x_coord_uwb_rj, y_coord_uwb_rj))
         
         # position and quaternion
-        if(z_coord_mb1202_rj == math.nan):
-            position = [x_coord_uwb_rj,y_coord_uwb_rj,z_coord_uwb_rj]
-        else:
-            position = [x_coord_uwb_rj,y_coord_uwb_rj,z_coord_mb1202_rj]
+        position = [x_coord_uwb_rj,y_coord_uwb_rj,math.nan]
 
         # publish vehicle visual odometry topic
         self.publish_vehicle_visual_odometry(position)
@@ -230,57 +213,33 @@ class UwbPX4Bridge(Node):
 
     # ------ FUNCTIONS -------           
 
-    def lettura_mb1202(self,address):
-        try:
-            i2cbus = SMBus(1)
-            i2cbus.write_byte(address, 0x51)
-            time.sleep(0.1)  #100ms
-            val = i2cbus.read_word_data(address, 0xe1)
-
-            z = (val >> 8) & 0xff | (val & 0xff)
-
-            if z!=25:
-                return z * 0.01
-            else:
-                return math.nan
-    
-        except IOError as e:
-            print(e)
-            return math.nan
-
-
     def lettura_uwb(self,rl):
         
         # read the line and decode
         mesg = rl.readline().decode("utf-8")
         mesg = mesg.replace("\r\n", "")
         # split the string
-        tx, rx, identity, distance = mesg.split(" ")
+        times = mesg.split(" ")
         
-        return int(tx), int(rx), int(identity), float(distance)
+        return times
     
-    def data_outlier_rejection(self,data_uwb,data_mb1202):
+    def data_outlier_rejection(self,data_uwb):
 
         # - check on the skew term
         if(self.skew < 0.9 or self.skew > 1.1):
             x_coord_uwb = math.nan
             y_coord_uwb = math.nan
-            z_coord_uwb = math.nan
         else:
             # - check on the uwb coordinate
             data_tmp = np.array(data_uwb)
             batch_tmp = np.array(self.batch_uwb)
-            uwb_coord = np.zeros(3)
-            for i in range(3):
+            uwb_coord = np.zeros(2)
+            for i in range(2):
                 uwb_coord[i] = self.reject_outliers(data_tmp[i],batch_tmp[:,i])
             x_coord_uwb = uwb_coord[0]
             y_coord_uwb = uwb_coord[1]
-            z_coord_uwb = uwb_coord[2]
-            
-        # - check on the mb1202 coordinate
-        z_coord_mb1202 = self.reject_outliers(data_mb1202,self.batch_mb1202)
-
-        return x_coord_uwb, y_coord_uwb, z_coord_uwb, z_coord_mb1202 
+    
+        return x_coord_uwb, y_coord_uwb 
     
     def reject_outliers(value, data, m = 3.):
         data_tmp = np.array(data)
@@ -316,14 +275,6 @@ class UwbPX4Bridge(Node):
             self.get_logger().info("Actual position: ({:.2f}, {:.2f}, {:.2f})".format(msg.position[0], msg.position[1], msg.position[2]))      
 
         self.vehicle_pose_publisher_.publish(msg)
-
-
-# def main(args=None):
-#     
-    
-#     rl = ReadLine(ser)
-#     [tx, rx, identity, distance] = lettura_uwb(rl)
-#     print('Tx: {0}, Rx: {1}, id: {2}, Range: {3}'.format(round(tx,2),round(rx,2),round(identity,2),round(distance,2)))
 
 def main(args=None):
     rclpy.init(args=args)
