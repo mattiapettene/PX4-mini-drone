@@ -178,9 +178,15 @@ class UwbPX4Bridge(Node):
 
         # flag to print uwb estimated position
         self.flag_print = False
+        self.flag_file = True
+
+        # Save data to file
+        self.f = open("data.txt", "w")
+        self.f.write('x_uwb,y_uwb,z_uwb,z_mb1202')
 
         # timer callback
         self.timer_ = self.create_timer(timer_period, self.timer_callback)
+
 
     def timer_callback(self):
 
@@ -194,18 +200,28 @@ class UwbPX4Bridge(Node):
         [x_coord_uwb,y_coord_uwb,z_coord_uwb,self.skew] = self.tdoa.TDoA(time,self.skew)
         data_uwb = [x_coord_uwb,y_coord_uwb,z_coord_uwb]
 
+        [x_coord_uwb_rj, y_coord_uwb_rj, z_coord_uwb_rj, z_coord_mb1202_rj] = self.data_outlier_rejection(data_uwb,z_coord_mb1202)
+        
         # collect batch of data
-        self.batch_mb1202.append(z_coord_mb1202)
-        self.batch_uwb.append([x_coord_uwb,y_coord_uwb])
+        if(z_coord_mb1202_rj != math.nan):
+            self.batch_mb1202.append(z_coord_mb1202_rj)
+
+        if(x_coord_uwb_rj != math.nan and y_coord_uwb_rj != math.nan and z_coord_uwb_rj != math.nan):
+            self.batch_uwb.append([x_coord_uwb_rj,y_coord_uwb_rj,z_coord_uwb_rj])
+        
         if(len(self.batch_mb1202) > 50):
             self.batch_mb1202.pop(0)
             self.batch_uwb.pop(0)
 
         # outlier rejection
-        self.data_outlier_rejection(data_uwb,z_coord_mb1202)
-
+        if(self.flag_file):
+            self.f.write('{0},{1},{2},{3}\n'.format(x_coord_uwb_rj, y_coord_uwb_rj, z_coord_uwb_rj, z_coord_mb1202_rj))
+        
         # position and quaternion
-        position = [x_coord_uwb,y_coord_uwb,z_coord_mb1202]
+        if(z_coord_mb1202_rj == math.nan):
+            position = [x_coord_uwb_rj,y_coord_uwb_rj,z_coord_uwb_rj]
+        else:
+            position = [x_coord_uwb_rj,y_coord_uwb_rj,z_coord_mb1202_rj]
 
         # publish vehicle visual odometry topic
         self.publish_vehicle_visual_odometry(position)
@@ -220,11 +236,18 @@ class UwbPX4Bridge(Node):
             i2cbus.write_byte(address, 0x51)
             time.sleep(0.1)  #100ms
             val = i2cbus.read_word_data(address, 0xe1)
-            print((val >> 8) & 0xff | (val & 0xff), 'cm')
+
+            z = (val >> 8) & 0xff | (val & 0xff)
+
+            if z!=25:
+                return z * 0.01
+            else:
+                return math.nan
+    
         except IOError as e:
             print(e)
+            return math.nan
 
-        return val
 
     def lettura_uwb(self,rl):
         
@@ -307,7 +330,7 @@ def main(args=None):
     print("Starting uwb bridge node...\n")
     uwb_bridge = UwbPX4Bridge()
     rclpy.spin(uwb_bridge)
-
+    uwb_bridge.f.close()
     # Destroy the node explicitly
     uwb_bridge.destroy_node()
     rclpy.shutdown()
