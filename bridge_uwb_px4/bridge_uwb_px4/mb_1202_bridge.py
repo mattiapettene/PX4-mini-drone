@@ -58,7 +58,10 @@ class Mb1202PX4Bridge(Node):
         z_coord_mb1202 = self.lettura_mb1202(self.address)
 
         # outlier rejection
-        z_coord_mb1202_rj = self.reject_outliers(z_coord_mb1202,self.batch_mb1202)
+        if len(self.batch_mb1202) != 0:
+            z_coord_mb1202_rj = self.reject_outliers(z_coord_mb1202,self.batch_mb1202)
+        else:
+            z_coord_mb1202_rj = z_coord_mb1202
 
         # collect batch of data
         if(z_coord_mb1202_rj != math.nan):
