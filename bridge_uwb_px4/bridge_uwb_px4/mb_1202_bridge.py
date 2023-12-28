@@ -98,10 +98,12 @@ class Mb1202PX4Bridge(Node):
             return math.nan
         
     def reject_outliers(value, data, m = 3.):
-        data_tmp = np.array(data)
+        data_tmp = data
         print(len(data_tmp))
         mva = sum(data_tmp)/len(data_tmp)
-        std = np.sqrt(sum((data_tmp - mva)**2)/len(data_tmp))
+        std = []
+        for i in range(len(data)):
+            std.append(np.sqrt(sum((data_tmp[i] - mva)**2)/len(data_tmp)))
         z_score = abs((value - mva)/std)
         if(z_score < m):
             return value
