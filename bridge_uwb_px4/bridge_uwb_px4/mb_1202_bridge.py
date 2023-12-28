@@ -58,6 +58,7 @@ class Mb1202PX4Bridge(Node):
         z_coord_mb1202 = self.lettura_mb1202(self.address)
 
         # outlier rejection
+        print(len(self.batch_mb1202))
         if len(self.batch_mb1202) != 0:
             z_coord_mb1202_rj = self.reject_outliers(z_coord_mb1202,self.batch_mb1202)
         else:
@@ -76,8 +77,6 @@ class Mb1202PX4Bridge(Node):
 
         # publish vehicle visual odometry topic
         self.publish_vehicle_visual_odometry([math.nan, math.nan, z_coord_mb1202_rj])
-
-        self.offboard_setpoint_counter_ += 1
 
     # ------ FUNCTIONS -------           
 
