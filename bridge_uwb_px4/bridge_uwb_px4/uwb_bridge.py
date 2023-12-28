@@ -149,7 +149,8 @@ class UwbPX4Bridge(Node):
         )
 
         # create publisher to vehicle visual odometry topic
-        self.vehicle_pose_publisher_ = self.create_publisher(VehicleOdometry,"/fmu/in/vehicle_visual_odometry",qos_profile)    
+        self.vehicle_pose_publisher_ = self.create_publisher(VehicleOdometry,"/fmu/in/vehicle_visual_odometry",qos_profile)
+        self.uwb_pose_publisher_ = self.create_publisher(VehicleOdometry,"/Drone/uwb_pose",qos_profile)
 
         # batch of data for moving average filter (collect a batch of data of 50 elements)
         self.batch_uwb = []
@@ -275,13 +276,13 @@ class UwbPX4Bridge(Node):
             self.get_logger().info("Actual position: ({:.2f}, {:.2f}, {:.2f})".format(msg.position[0], msg.position[1], msg.position[2]))      
 
         self.vehicle_pose_publisher_.publish(msg)
+        self.uwb_pose_publisher_.publish(msg)
 
 def main(args=None):
     rclpy.init(args=args)
     print("Starting uwb bridge node...\n")
     uwb_bridge = UwbPX4Bridge()
     rclpy.spin(uwb_bridge)
-    uwb_bridge.f.close()
     # Destroy the node explicitly
     uwb_bridge.destroy_node()
     rclpy.shutdown()
