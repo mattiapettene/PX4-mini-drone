@@ -61,7 +61,7 @@ class OffboardControl(Node):
 
         # Point list tajectory definition
         p1 = Point(0.0, 0.0, -2.0)
-        p2 = Point(0.0, -1.0, -2.0)
+        p2 = Point(1.0, 0.0, -2.0)
         self.point_list = [p1, p2]
         
         self.range = 0.3 # Set tolerance range to 30 cm
@@ -317,9 +317,9 @@ class OffboardControl(Node):
         #       ...                 ]                 ...                                          ]
         
         for i in range(num_anchors - 1):
-            A[i, 0] = anchors_pos[i+1][0] - abs(anchors_pos[0][0])       
-            A[i, 1] = anchors_pos[i+1][1] - abs(anchors_pos[0][1])       
-            A[i, 2] = anchors_pos[i+1][2] - abs(anchors_pos[0][2])      
+            A[i, 0] = anchors_pos[i+1][0] - anchors_pos[0][0]       
+            A[i, 1] = anchors_pos[i+1][1] - anchors_pos[0][1]       
+            A[i, 2] = anchors_pos[i+1][2] - anchors_pos[0][2]      
             
             b[i] = 0.5*(
             (distances[0] ** 2 - distances[i+1] ** 2) +
@@ -362,8 +362,8 @@ class OffboardControl(Node):
         self.ygps_vec.append(self.y)
         self.zgps_vec.append(self.z)
 
-        self.xuwb_vec.append(- drone_position[0])
-        self.yuwb_vec.append(- drone_position[1])
+        self.xuwb_vec.append(drone_position[0])
+        self.yuwb_vec.append(drone_position[1])
         self.zuwb_vec.append(- drone_position[2])
 
 
@@ -372,13 +372,13 @@ class OffboardControl(Node):
         plt.figure(1)
         plt.title('x position')
         plt.plot(self.xgps_vec)
-        plt.plot(self.xuwb_vec)
+        plt.plot(self.yuwb_vec)
         plt.legend(['x_gps', 'x_uwb'])
 
         plt.figure(2)
         plt.title('y position')
         plt.plot(self.ygps_vec)
-        plt.plot(self.yuwb_vec)
+        plt.plot(self.xuwb_vec)
         plt.legend(['y_gps', 'y_uwb'])
 
         plt.figure(3)
