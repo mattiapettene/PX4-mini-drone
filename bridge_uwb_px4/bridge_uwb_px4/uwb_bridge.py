@@ -100,7 +100,7 @@ class DTOA:
         #     return math.nan, math.nan, math.nan, math.nan
         
         skew_actual = (toa_rx[:,1]- toa_rx[:,0]) /(toa_tx[:,1] - toa_tx[:,0])
-        skew_mean = skew + (1/self.n_mes * (skew_actual - skew))
+        skew_mean = skew_actual #skew + (1/self.n_mes * (skew_actual - skew))
         
         tmp_rx = np.zeros((self.n,2))
         tmp_rx[:,0] = toa_rx[:,0] - toa_rx[0,0] - (toa_tx[:,0] * skew_mean - toa_tx[0,0] * skew_mean[0])
@@ -176,10 +176,6 @@ class UwbPX4Bridge(Node):
         # flag to print uwb estimated position
         self.flag_print = True
 
-        # Save data to file
-        self.f = open("data_uwb.csv", "w")
-        self.f.write('x_uwb,y_uwb')
-
         # timer callback
         self.timer_ = self.create_timer(timer_period, self.timer_callback)
 
@@ -201,7 +197,10 @@ class UwbPX4Bridge(Node):
             if(np.mean(skew_new) > 0.9 or np.mean(skew_new) < 1.1):
                 self.skew = skew_new
 
-            [x_coord_uwb_rj, y_coord_uwb_rj] = self.data_outlier_rejection(data_uwb,skew_new)
+            if (len(self.batch_uwb) > 30 and not(np.isnan(data_uwb).all())):
+                [x_coord_uwb_rj, y_coord_uwb_rj] = self.data_outlier_rejection(data_uwb,skew_new)
+            else:
+                [x_coord_uwb_rj, y_coord_uwb_rj] = data_uwb
 
             if(self.flag_print):
                 print("rj: {0},{1}".format(x_coord_uwb_rj, y_coord_uwb_rj))
@@ -246,12 +245,8 @@ class UwbPX4Bridge(Node):
             data_tmp = np.array(data_uwb)
             batch_tmp = np.array(self.batch_uwb)
             uwb_coord = np.zeros(2)
-            if (np.size(batch_tmp) == 2):
-                for i in range(2):
-                    uwb_coord[i] = self.reject_outliers(data_tmp[i],batch_tmp[i])
-            else:
-                for i in range(2):
-                    uwb_coord[i] = self.reject_outliers(data_tmp[i],batch_tmp[:,i])
+            for i in range(2):
+                uwb_coord[i] = self.reject_outliers(data_tmp[i],batch_tmp[:,i])
             x_coord_uwb = uwb_coord[0]
             y_coord_uwb = uwb_coord[1]
     
