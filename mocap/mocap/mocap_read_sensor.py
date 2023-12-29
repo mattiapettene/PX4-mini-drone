@@ -8,6 +8,7 @@ from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy, QoSDur
 
 from px4_msgs.msg import VehicleStatus
 from px4_msgs.msg import VehicleOdometry
+from geometry_msgs.msg import PoseStamped
 
 class OffboardControl(Node):
 
@@ -29,7 +30,7 @@ class OffboardControl(Node):
                                                                     "/Drone/mb1202", self.get_mb1202_position, qos_profile)
         self.vehicle_uwb_position_subscriber_ = self.create_subscription(VehicleOdometry, 
                                                                     "/Drone/uwb_pose", self.get_uwb_position, qos_profile)
-        self.vehicle_mocap_position_subscriber_ = self.create_subscription(VehicleOdometry, 
+        self.vehicle_mocap_position_subscriber_ = self.create_subscription(PoseStamped, 
                                                                     "/Drone/pose", self.get_mocap_position, qos_profile)
         
         timer_period = 0.1  # 100 milliseconds
