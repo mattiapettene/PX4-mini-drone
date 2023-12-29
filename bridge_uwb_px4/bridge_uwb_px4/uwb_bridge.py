@@ -190,11 +190,17 @@ class UwbPX4Bridge(Node):
 
         if(num_mess_uwb == 25):
             # calculate x,y,z coordinate and skew using tdoa algorithm
-            [x_coord_uwb,y_coord_uwb,z_coord_uwb,self.skew] = self.tdoa.TDoA(times_uwb,self.skew)
-            print(self.skew)
+            [x_coord_uwb,y_coord_uwb,z_coord_uwb,skew_new] = self.tdoa.TDoA(times_uwb,self.skew)
             data_uwb = [x_coord_uwb,y_coord_uwb]
+            print("true: \n")
+            print(data_uwb)
 
+            if(np.mean(self.skew) > 0.9 or np.mean(self.skew) < 1.1):
+                self.skew = skew_new
+            
             [x_coord_uwb_rj, y_coord_uwb_rj] = self.data_outlier_rejection(data_uwb)
+            print("rj: \n")
+            print([x_coord_uwb_rj, y_coord_uwb_rj])
             
             # collect batch of data
             if(not(np.isnan(x_coord_uwb_rj)) and not(np.isnan(y_coord_uwb_rj))):
