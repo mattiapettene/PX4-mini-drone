@@ -55,8 +55,8 @@ class Mb1202PX4Bridge(Node):
         z_coord_mb1202 = self.lettura_mb1202(self.address)
 
         # outlier rejection
-        if len(self.batch_mb1202) != 0:
-            z_coord_mb1202_rj = self.reject_outliers(z_coord_mb1202,self.batch_mb1202)
+        if (len(self.batch_mb1202) > 30 and not(np.isnan(z_coord_mb1202))):
+            z_coord_mb1202_rj = self.reject_outliers(z_coord_mb1202)
         else:
             z_coord_mb1202_rj = z_coord_mb1202
 
@@ -90,11 +90,10 @@ class Mb1202PX4Bridge(Node):
             print(e)
             return math.nan
         
-    def reject_outliers(value, data, m = 3.):
-        mva = sum(data)/len(data)
-        std = []
-        for i in range(len(data)):
-            std.append(np.sqrt(sum((data[i] - mva)**2)/len(data)))
+    def reject_outliers(self, value, m = 3.):
+        data = self.batch_mb1202
+        mva = np.mean(data)
+        std = np.std(data)
         z_score = abs((value - mva)/std)
         if(z_score < m):
             return value
