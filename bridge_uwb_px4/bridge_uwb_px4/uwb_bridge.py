@@ -195,10 +195,10 @@ class UwbPX4Bridge(Node):
             if(self.flag_print):
                 print("true: {0},{1}".format(x_coord_uwb, y_coord_uwb))
             
-            if(np.mean(skew_new) > 0.9 or np.mean(skew_new) < 1.1):
+            if(np.mean(skew_new) > 0.9 and np.mean(skew_new) < 1.1):
                 self.skew = skew_new
 
-            if (len(self.batch_uwb) > 30 and not(np.isnan(data_uwb).all())):
+            if (len(self.batch_uwb) > 10 and not(np.isnan(data_uwb).all()) and np.mean(skew_new) > 0.9 and np.mean(skew_new) < 1.1):
                 [x_coord_uwb_rj, y_coord_uwb_rj] = self.data_outlier_rejection(data_uwb,skew_new)
             else:
                 [x_coord_uwb_rj, y_coord_uwb_rj] = data_uwb
@@ -210,7 +210,7 @@ class UwbPX4Bridge(Node):
             if(not(np.isnan(x_coord_uwb_rj)) and not(np.isnan(y_coord_uwb_rj))):
                 self.batch_uwb.append([x_coord_uwb_rj,y_coord_uwb_rj])
             
-            if(len(self.batch_uwb) > 30):
+            if(len(self.batch_uwb) > 20):
                 self.batch_uwb.pop(0)
           
             # position and quaternion

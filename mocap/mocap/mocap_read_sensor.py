@@ -17,7 +17,7 @@ class OffboardControl(Node):
 
         qos_profile = QoSProfile(
             reliability=QoSReliabilityPolicy.BEST_EFFORT,
-            durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+            durability=QoSDurabilityPolicy.VOLATILE,
             history=QoSHistoryPolicy.KEEP_LAST,
             depth=1
         )
@@ -59,7 +59,7 @@ class OffboardControl(Node):
         self.z_mb1202 = 0.0
 
         self.f = open("dati_read_sensor.csv", "w")
-        self.f.write("x_est,y_est,z_est,x_mocap, y_mocap, z_mocap, x_uwb, y_uwb, z_mb1202\n")
+        self.f.write("x_est,y_est,z_est,x_mocap,y_mocap,z_mocap,x_uwb,y_uwb,z_mb1202\n")
 
     def timer_callback(self):
 

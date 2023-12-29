@@ -113,7 +113,7 @@ class Mb1202PX4Bridge(Node):
         
         msg.position[0] = pos[0]
         msg.position[1] = pos[1]
-        msg.position[2] = pos[2]
+        msg.position[2] = -pos[2]
 
         msg.q[0] = quater[0]
         msg.q[1] = quater[1]
