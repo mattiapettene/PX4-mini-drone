@@ -186,48 +186,54 @@ class UwbPX4Bridge(Node):
 
         # read uwb module and get string data
         times_uwb = self.lettura_uwb(self.rl)
+        print(len(times_uwb))
 
         # calculate x,y,z coordinate and skew using tdoa algorithm
         [x_coord_uwb,y_coord_uwb,z_coord_uwb,self.skew] = self.tdoa.TDoA(times_uwb,self.skew)
-        data_uwb = [x_coord_uwb,y_coord_uwb]
+        print(self.skew)
+        # data_uwb = [x_coord_uwb,y_coord_uwb]
 
-        [x_coord_uwb_rj, y_coord_uwb_rj] = self.data_outlier_rejection(data_uwb)
+        # [x_coord_uwb_rj, y_coord_uwb_rj] = self.data_outlier_rejection(data_uwb)
         
-        # collect batch of data
-        if(not(np.isnan(x_coord_uwb_rj)) and not(np.isnan(y_coord_uwb_rj))):
-            self.batch_uwb.append([x_coord_uwb_rj,y_coord_uwb_rj])
+        # # collect batch of data
+        # if(not(np.isnan(x_coord_uwb_rj)) and not(np.isnan(y_coord_uwb_rj))):
+        #     self.batch_uwb.append([x_coord_uwb_rj,y_coord_uwb_rj])
         
-        if(len(self.batch_uwb) > 50):
-            self.batch_uwb.pop(0)
+        # if(len(self.batch_uwb) > 50):
+        #     self.batch_uwb.pop(0)
 
-        # outlier rejection
-        if(self.flag_file):
-            self.f.write('{0},{1},{2},{3}\n'.format(x_coord_uwb_rj, y_coord_uwb_rj))
+        # # outlier rejection
+        # if(self.flag_file):
+        #     self.f.write('{0},{1},{2},{3}\n'.format(x_coord_uwb_rj, y_coord_uwb_rj))
         
-        # position and quaternion
-        position = [x_coord_uwb_rj,y_coord_uwb_rj,math.nan]
+        # # position and quaternion
+        # position = [x_coord_uwb_rj,y_coord_uwb_rj,math.nan]
 
-        # publish vehicle visual odometry topic
-        self.publish_vehicle_visual_odometry(position)
+        # # publish vehicle visual odometry topic
+        # self.publish_vehicle_visual_odometry(position)
 
-        self.offboard_setpoint_counter_ += 1
+        # self.offboard_setpoint_counter_ += 1
 
     # ------ FUNCTIONS -------           
 
     def lettura_uwb(self,rl):
         
-        # read the line and decode
-        mesg = rl.readline().decode("utf-8")
-        mesg = mesg.replace("\r\n", "")
-        # split the string
-        times = mesg.split(" ")
-        
+        try:
+            # read the line and decode 
+            mesg = rl.readline().decode("utf-8")
+            mesg = mesg.replace("\r\n", "")
+            # split the string
+            times = mesg.split(" ")
+        except KeyboardInterrupt:
+            self.ser.close()
+            print ('closed serial port')
+
         return times
     
     def data_outlier_rejection(self,data_uwb):
 
         # - check on the skew term
-        if(self.skew < 0.9 or self.skew > 1.1):
+        if(np.mean(self.skew) < 0.9 or np.mean(self.skew) > 1.1):
             x_coord_uwb = math.nan
             y_coord_uwb = math.nan
         else:
