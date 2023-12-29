@@ -57,6 +57,7 @@ private:
 
 	rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr vehicle_pose_sub;
 	rclcpp::Publisher<px4_msgs::msg::VehicleOdometry>::SharedPtr vehicle_odometry_pub;
+	rclcpp::Publisher<px4_msgs::msg::VehicleOdometry>::SharedPtr vehicle_mocap_pub;
 
 	void poseCallback(const geometry_msgs::msg::PoseStamped::UniquePtr);
 };
