@@ -25,6 +25,7 @@ setup(
             'mocap_land = mocap.mocap_land:main',
             'mocap_square = mocap.mocap_square:main',
             'mocap_def = mocap.mocap_def:main',
+            'mocap_read_sensor = mocap.mocap_read_sensor:main',
         ],
     },
 )
