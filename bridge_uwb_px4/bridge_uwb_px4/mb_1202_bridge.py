@@ -26,6 +26,7 @@ class Mb1202PX4Bridge(Node):
 
         # create publisher to vehicle visual odometry topic
         self.vehicle_pose_publisher_ = self.create_publisher(VehicleOdometry,"/fmu/in/vehicle_visual_odometry",qos_profile)    
+        self.mb1202_pose_publisher_ = self.create_publisher(VehicleOdometry,"/Drone/mb1202",qos_profile)    
 
 
         # batch of data for moving average filter (collect a batch of data of 50 elements)
@@ -43,10 +44,6 @@ class Mb1202PX4Bridge(Node):
         # flag to print uwb estimated position
         self.flag_print = False
         self.flag_file = True
-
-        # Save data to file
-        self.f = open("data_mb1202.csv", "w")
-        self.f.write('z_mb1202\n')
 
         # timer callback
         self.timer_ = self.create_timer(timer_period, self.timer_callback)
@@ -69,10 +66,6 @@ class Mb1202PX4Bridge(Node):
 
         if(len(self.batch_mb1202) > 50):
             self.batch_mb1202.pop(0)
-
-        # outlier rejection
-        if(self.flag_file):
-            self.f.write('{0}\n'.format(z_coord_mb1202_rj))
 
         # publish vehicle visual odometry topic
         self.publish_vehicle_visual_odometry([math.nan, math.nan, z_coord_mb1202_rj])
@@ -131,13 +124,13 @@ class Mb1202PX4Bridge(Node):
             self.get_logger().info("Actual position: ({:.2f}, {:.2f}, {:.2f})".format(msg.position[0], msg.position[1], msg.position[2]))      
 
         self.vehicle_pose_publisher_.publish(msg)
+        self.mb1202_pose_publisher_.publish(msg)
 
 def main(args=None):
     rclpy.init(args=args)
     print("Starting uwb bridge node...\n")
     mb1202_bridge = Mb1202PX4Bridge()
     rclpy.spin(mb1202_bridge)
-    mb1202_bridge.f.close()
     # Destroy the node explicitly
     mb1202_bridge.destroy_node()
     rclpy.shutdown()
