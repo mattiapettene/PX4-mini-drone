@@ -174,8 +174,7 @@ class UwbPX4Bridge(Node):
         self.pos_0 = [0.,0.,0.]
 
         # flag to print uwb estimated position
-        self.flag_print = False
-        self.flag_file = False
+        self.flag_print = True
 
         # Save data to file
         self.f = open("data_uwb.csv", "w")
@@ -196,12 +195,16 @@ class UwbPX4Bridge(Node):
             [x_coord_uwb,y_coord_uwb,z_coord_uwb,skew_new] = self.tdoa.TDoA(times_uwb,self.skew)
             data_uwb = [x_coord_uwb,y_coord_uwb]
 
+            if(self.flag_print):
+                print("true: {0},{1}".format(x_coord_uwb, y_coord_uwb))
+            
             if(np.mean(skew_new) > 0.9 or np.mean(skew_new) < 1.1):
                 self.skew = skew_new
 
             [x_coord_uwb_rj, y_coord_uwb_rj] = self.data_outlier_rejection(data_uwb,skew_new)
-            print("rj: \n")
-            print([x_coord_uwb_rj, y_coord_uwb_rj])
+
+            if(self.flag_print):
+                print("rj: {0},{1}".format(x_coord_uwb_rj, y_coord_uwb_rj))
             
             # collect batch of data
             if(not(np.isnan(x_coord_uwb_rj)) and not(np.isnan(y_coord_uwb_rj))):
