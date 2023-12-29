@@ -17,7 +17,7 @@ def generate_launch_description():
             output="screen",
             emulate_tty=True,
             arguments=[
-                "--server", "192.168.1.216",
+                "--server", "192.168.1.10",
                 "--rate", "120",
             ],
         ),
