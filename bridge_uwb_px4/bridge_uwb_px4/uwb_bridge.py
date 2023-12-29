@@ -216,9 +216,9 @@ class UwbPX4Bridge(Node):
             # position and quaternion
             position = [x_coord_uwb_rj,y_coord_uwb_rj,math.nan]
 
-            if(ground_pos_flag):
+            if(self.ground_pos_flag):
                 self.pos_0 = [x_coord_uwb_rj, y_coord_uwb_rj]
-                ground_pos_flag = False
+                self.ground_pos_flag = False
                 print("Initial position saved\n")
 
             # publish vehicle visual odometry topic

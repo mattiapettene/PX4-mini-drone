@@ -42,6 +42,7 @@ public:
 		 * @brief Create publisher
 		*/
 		vehicle_odometry_pub = this->create_publisher<px4_msgs::msg::VehicleOdometry>("/fmu/in/vehicle_visual_odometry",qos);
+		vehicle_mocap_pub = this->create_publisher<px4_msgs::msg::VehicleOdometry>("/Drone/mocap_pose",qos);
 
 	}
 
@@ -95,6 +96,7 @@ void MocapPX4Bridge::poseCallback(const geometry_msgs::msg::PoseStamped::UniqueP
 	}
 
 	vehicle_odometry_pub -> publish(vehicle_odometry_Msg);
+	vehicle_mocap_pub -> publish(vehicle_odometry_Msg);
 }
 
 int main(int argc, char * argv[])

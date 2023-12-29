@@ -30,8 +30,8 @@ class OffboardControl(Node):
                                                                     "/Drone/mb1202", self.get_mb1202_position, qos_profile)
         self.vehicle_uwb_position_subscriber_ = self.create_subscription(VehicleOdometry, 
                                                                     "/Drone/uwb_pose", self.get_uwb_position, qos_profile)
-        self.vehicle_mocap_position_subscriber_ = self.create_subscription(PoseStamped, 
-                                                                    "/Drone/pose", self.get_mocap_position, qos_profile)
+        self.vehicle_mocap_position_subscriber_ = self.create_subscription(VehicleOdometry, 
+                                                                    "/Drone/mocap_pose", self.get_mocap_position, qos_profile)
         
         timer_period = 0.1  # 100 milliseconds
         self.timer_ = self.create_timer(timer_period, self.timer_callback)
@@ -104,9 +104,9 @@ class OffboardControl(Node):
 
     def get_mocap_position(self, msg):
         if(msg):
-            self.x_mocap = msg.position.x
-            self.y_mocap = msg.position.y
-            self.z_mocap = msg.position.z
+            self.x_mocap = msg.position[0]
+            self.y_mocap = msg.position[1]
+            self.z_mocap = msg.position[2]
 
     def get_uwb_position(self, msg):
         if(msg):
