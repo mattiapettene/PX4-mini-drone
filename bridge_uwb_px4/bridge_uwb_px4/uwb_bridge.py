@@ -96,6 +96,9 @@ class DTOA:
         toa_rx = np.array([[t6_rx1,t6_rx2],[t1_rx1,t1_rx2],[t2_rx1,t2_rx2],[t3_rx1,t3_rx2],[t4_rx1,t4_rx2],[t5_rx1,t5_rx2]])
 
         # Drift calculation (recursive mean method)
+        # if (toa_tx[:,1] - toa_tx[:,0]):
+        #     return math.nan, math.nan, math.nan, math.nan
+        
         skew_actual = (toa_rx[:,1]- toa_rx[:,0]) /(toa_tx[:,1] - toa_tx[:,0])
         skew_mean = skew + (1/self.n_mes * (skew_actual - skew))
         
@@ -161,7 +164,7 @@ class UwbPX4Bridge(Node):
         self.rl = ReadLine(self.ser)
 
         # timer period callback
-        timer_period = 0.1  # 100 milliseconds
+        timer_period = 0.05  # 50 milliseconds
 
         # initialize dtoa algorithm
         self.skew = 0
@@ -192,9 +195,10 @@ class UwbPX4Bridge(Node):
             # calculate x,y,z coordinate and skew using tdoa algorithm
             [x_coord_uwb,y_coord_uwb,z_coord_uwb,skew_new] = self.tdoa.TDoA(times_uwb,self.skew)
             data_uwb = [x_coord_uwb,y_coord_uwb]
-            print("true: \n")
-            print(data_uwb)
-      
+
+            if(np.mean(skew_new) > 0.9 or np.mean(skew_new) < 1.1):
+                self.skew = skew_new
+
             [x_coord_uwb_rj, y_coord_uwb_rj] = self.data_outlier_rejection(data_uwb,skew_new)
             print("rj: \n")
             print([x_coord_uwb_rj, y_coord_uwb_rj])
@@ -205,11 +209,7 @@ class UwbPX4Bridge(Node):
             
             if(len(self.batch_uwb) > 50):
                 self.batch_uwb.pop(0)
-
-            # outlier rejection
-            if(self.flag_file):
-                self.f.write('{0},{1},{2},{3}\n'.format(x_coord_uwb_rj, y_coord_uwb_rj))
-            
+          
             # position and quaternion
             position = [x_coord_uwb_rj,y_coord_uwb_rj,math.nan]
 
@@ -235,11 +235,10 @@ class UwbPX4Bridge(Node):
     def data_outlier_rejection(self,data_uwb,skew_new):
 
         # - check on the skew term
-        if(np.mean(self.skew) < 0.9 or np.mean(self.skew) > 1.1):
+        if(np.mean(skew_new) < 0.9 or np.mean(skew_new) > 1.1):
             x_coord_uwb = math.nan
             y_coord_uwb = math.nan
         else:
-            self.skew = skew_new
             # - check on the uwb coordinate
             data_tmp = np.array(data_uwb)
             batch_tmp = np.array(self.batch_uwb)
@@ -255,8 +254,8 @@ class UwbPX4Bridge(Node):
     
         return x_coord_uwb, y_coord_uwb 
     
-    def reject_outliers(value, data, m = 3.):
-        data_tmp = np.array(data)
+    def reject_outliers(self, value, m = 3.):
+        data_tmp = np.array(self.batch_uwb)
         mva = np.mean(data_tmp)
         std = np.std(data_tmp)
         z_score = abs((value - mva)/std)
