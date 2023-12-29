@@ -51,7 +51,7 @@ class DTOA:
         self.n = len(self.A_n)
 
         # number of mesurements
-        self.n_mes = 0
+        self.n_mes = 1
 
         # Speed of light
         self.c = 299792458
@@ -157,7 +157,7 @@ class UwbPX4Bridge(Node):
 
         # uwb module address
         self.mesg = {}
-        self.ser = serial.Serial('/dev/ttyAMA0',921600,timeout=0)
+        self.ser = serial.Serial('/dev/ttyACM0',921600,timeout=0)
         self.rl = ReadLine(self.ser)
 
         # timer period callback
