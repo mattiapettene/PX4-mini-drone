@@ -265,7 +265,7 @@ class UwbPX4Bridge(Node):
         else:
             return math.nan
 
-    def publish_vehicle_visual_odometry(self, pos = math.nan, quater = math.nan):
+    def publish_vehicle_visual_odometry(self, pos = [math.nan,math.nan,math.nan], quater = [math.nan,math.nan,math.nan,math.nan]):
         
         msg = VehicleOdometry()
 
