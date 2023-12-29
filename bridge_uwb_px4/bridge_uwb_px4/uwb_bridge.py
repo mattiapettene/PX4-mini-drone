@@ -171,7 +171,8 @@ class UwbPX4Bridge(Node):
         self.tdoa = DTOA()
 
         # initial position
-        self.pos_0 = [0.,0.,0.]
+        self.pos_0 = [0.,0.]
+        self.ground_pos_flag = True
 
         # flag to print uwb estimated position
         self.flag_print = True
@@ -209,11 +210,16 @@ class UwbPX4Bridge(Node):
             if(not(np.isnan(x_coord_uwb_rj)) and not(np.isnan(y_coord_uwb_rj))):
                 self.batch_uwb.append([x_coord_uwb_rj,y_coord_uwb_rj])
             
-            if(len(self.batch_uwb) > 50):
+            if(len(self.batch_uwb) > 30):
                 self.batch_uwb.pop(0)
           
             # position and quaternion
             position = [x_coord_uwb_rj,y_coord_uwb_rj,math.nan]
+
+            if(ground_pos_flag):
+                self.pos_0 = [x_coord_uwb_rj, y_coord_uwb_rj]
+                ground_pos_flag = False
+                print("Initial position saved\n")
 
             # publish vehicle visual odometry topic
             self.publish_vehicle_visual_odometry(position)
@@ -252,8 +258,8 @@ class UwbPX4Bridge(Node):
     
         return x_coord_uwb, y_coord_uwb 
     
-    def reject_outliers(self, value, m = 3.):
-        data_tmp = np.array(self.batch_uwb)
+    def reject_outliers(self, value, batch_uwb, m = 2.):
+        data_tmp = np.array(batch_uwb)
         mva = np.mean(data_tmp)
         std = np.std(data_tmp)
         z_score = abs((value - mva)/std)
@@ -273,8 +279,8 @@ class UwbPX4Bridge(Node):
 
         # Convert uwb reference frame into PX4 reference frame
         
-        msg.position[0] = pos[0]
-        msg.position[1] = pos[1]
+        msg.position[0] = pos[0] - self.pos_0[0]
+        msg.position[1] = pos[1] - self.pos_0[1]
         msg.position[2] = pos[2]
 
         msg.q[0] = quater[0]
@@ -285,7 +291,7 @@ class UwbPX4Bridge(Node):
         if (self.flag_print):
             self.get_logger().info("Actual position: ({:.2f}, {:.2f}, {:.2f})".format(msg.position[0], msg.position[1], msg.position[2]))      
 
-        self.vehicle_pose_publisher_.publish(msg)
+        # self.vehicle_pose_publisher_.publish(msg)
         self.uwb_pose_publisher_.publish(msg)
 
 def main(args=None):
