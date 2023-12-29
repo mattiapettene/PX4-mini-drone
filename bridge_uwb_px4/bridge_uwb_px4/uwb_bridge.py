@@ -194,11 +194,8 @@ class UwbPX4Bridge(Node):
             data_uwb = [x_coord_uwb,y_coord_uwb]
             print("true: \n")
             print(data_uwb)
-
-            if(np.mean(self.skew) > 0.9 or np.mean(self.skew) < 1.1):
-                self.skew = skew_new
-            
-            [x_coord_uwb_rj, y_coord_uwb_rj] = self.data_outlier_rejection(data_uwb)
+      
+            [x_coord_uwb_rj, y_coord_uwb_rj] = self.data_outlier_rejection(data_uwb,skew_new)
             print("rj: \n")
             print([x_coord_uwb_rj, y_coord_uwb_rj])
             
@@ -235,19 +232,24 @@ class UwbPX4Bridge(Node):
 
         return times
     
-    def data_outlier_rejection(self,data_uwb):
+    def data_outlier_rejection(self,data_uwb,skew_new):
 
         # - check on the skew term
         if(np.mean(self.skew) < 0.9 or np.mean(self.skew) > 1.1):
             x_coord_uwb = math.nan
             y_coord_uwb = math.nan
         else:
+            self.skew = skew_new
             # - check on the uwb coordinate
             data_tmp = np.array(data_uwb)
             batch_tmp = np.array(self.batch_uwb)
             uwb_coord = np.zeros(2)
-            for i in range(2):
-                uwb_coord[i] = self.reject_outliers(data_tmp[i],batch_tmp[:,i])
+            if (np.size(batch_tmp) == 2):
+                for i in range(2):
+                    uwb_coord[i] = self.reject_outliers(data_tmp[i],batch_tmp[i])
+            else:
+                for i in range(2):
+                    uwb_coord[i] = self.reject_outliers(data_tmp[i],batch_tmp[:,i])
             x_coord_uwb = uwb_coord[0]
             y_coord_uwb = uwb_coord[1]
     
@@ -255,8 +257,8 @@ class UwbPX4Bridge(Node):
     
     def reject_outliers(value, data, m = 3.):
         data_tmp = np.array(data)
-        mva = sum(data_tmp)/len(data_tmp)
-        std = np.sqrt(sum((data_tmp - mva)**2)/len(data_tmp))
+        mva = np.mean(data_tmp)
+        std = np.std(data_tmp)
         z_score = abs((value - mva)/std)
         if(z_score < m):
             return value
