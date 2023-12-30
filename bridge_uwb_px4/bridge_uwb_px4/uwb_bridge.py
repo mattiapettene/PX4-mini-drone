@@ -12,6 +12,11 @@ from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy, QoSDur
 from px4_msgs.msg import VehicleOdometry
 
 class ReadLine:
+
+    '''
+        function to read a serial port
+    '''
+    
     def __init__(self, s):
         self.buf = bytearray()
         self.s = s
@@ -59,6 +64,7 @@ class DTOA:
     def TDoA(self, ts, skew):
 
         '''
+            TDOA algorithm to calculate tag position given ts signal
             ts: signal coming from uwb antennas
             skew: drift in the measurement
         '''
@@ -95,12 +101,12 @@ class DTOA:
         toa_tx = np.array([[t6_tx1,t6_tx2],[t1_tx1,t1_tx2],[t2_tx1,t2_tx2],[t3_tx1,t3_tx2],[t4_tx1,t4_tx2],[t5_tx1,t5_tx2]])
         toa_rx = np.array([[t6_rx1,t6_rx2],[t1_rx1,t1_rx2],[t2_rx1,t2_rx2],[t3_rx1,t3_rx2],[t4_rx1,t4_rx2],[t5_rx1,t5_rx2]])
 
-        # Drift calculation (recursive mean method)
-        # if (toa_tx[:,1] - toa_tx[:,0]):
-        #     return math.nan, math.nan, math.nan, math.nan
+        if(np.array(toa_tx[:,1] - toa_tx[:,0]).all() == 0):
+            return math.nan,math.nan,math.nan,100
         
+        # Drift calculation (recursive mean method)
         skew_actual = (toa_rx[:,1]- toa_rx[:,0]) /(toa_tx[:,1] - toa_tx[:,0])
-        skew_mean = skew_actual #skew + (1/self.n_mes * (skew_actual - skew))
+        skew_mean = skew + (1/self.n_mes * (skew_actual - skew))
         
         tmp_rx = np.zeros((self.n,2))
         tmp_rx[:,0] = toa_rx[:,0] - toa_rx[0,0] - (toa_tx[:,0] * skew_mean - toa_tx[0,0] * skew_mean[0])
@@ -140,6 +146,10 @@ class DTOA:
 
 class UwbPX4Bridge(Node):
 
+    '''
+        Ros2 node: uwb bridge
+    '''
+    
     def __init__(self):
         super().__init__('UwbPX4Bridge')
 
@@ -187,8 +197,10 @@ class UwbPX4Bridge(Node):
         times_uwb = self.lettura_uwb(self.rl)
         num_mess_uwb = len(times_uwb)
 
+        # check if we recive the signal from all the anchors
         if(num_mess_uwb == 25):
-            # calculate x,y,z coordinate and skew using tdoa algorithm
+
+            # calculate x,y,z coordinate and skew using tdoa algorithm (z will be neglected)
             [x_coord_uwb,y_coord_uwb,z_coord_uwb,skew_new] = self.tdoa.TDoA(times_uwb,self.skew)
             data_uwb = [x_coord_uwb,y_coord_uwb]
 
@@ -214,7 +226,7 @@ class UwbPX4Bridge(Node):
                 self.batch_uwb.pop(0)
           
             # position and quaternion
-            position = [x_coord_uwb_rj,y_coord_uwb_rj,math.nan]
+            position = [x_coord_uwb_rj,y_coord_uwb_rj]
 
             if(self.ground_pos_flag):
                 self.pos_0 = [x_coord_uwb_rj, y_coord_uwb_rj]
@@ -268,28 +280,21 @@ class UwbPX4Bridge(Node):
         else:
             return math.nan
 
-    def publish_vehicle_visual_odometry(self, pos = [math.nan,math.nan,math.nan], quater = [math.nan,math.nan,math.nan,math.nan]):
+    def publish_vehicle_visual_odometry(self, pos = [math.nan,math.nan]):
         
         msg = VehicleOdometry()
 
         msg.pose_frame = msg.POSE_FRAME_NED
-
         msg.timestamp = int(Clock().now().nanoseconds / 1000) # time in microseconds
         msg.timestamp_sample = msg.timestamp
 
         # Convert uwb reference frame into PX4 reference frame
-        
-        msg.position[0] = pos[0] - self.pos_0[0]
-        msg.position[1] = pos[1] - self.pos_0[1]
-        msg.position[2] = pos[2]
+        msg.position[0] = -(pos[1] - self.pos_0[1])
+        msg.position[1] = -(pos[0] - self.pos_0[0])
 
-        msg.q[0] = quater[0]
-        msg.q[1] = quater[1]
-        msg.q[2] = quater[2]
-        msg.q[3] = quater[3]
-
+        # print position published in visual odometry
         if (self.flag_print):
-            self.get_logger().info("Actual position: ({:.2f}, {:.2f}, {:.2f})".format(msg.position[0], msg.position[1], msg.position[2]))      
+            self.get_logger().info("Actual position: ({:.2f}, {:.2f})".format(msg.position[0], msg.position[1]))      
 
         # self.vehicle_pose_publisher_.publish(msg)
         self.uwb_pose_publisher_.publish(msg)

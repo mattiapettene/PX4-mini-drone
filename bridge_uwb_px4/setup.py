@@ -21,7 +21,6 @@ setup(
     entry_points={
         'console_scripts': [
             'uwb_bridge = bridge_uwb_px4.uwb_bridge:main',
-            'mb1202_bridge = bridge_uwb_px4.mb_1202_bridge:main',
         ],
     },
 )
