@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-          'uwb = uwb.uwb:main',
+            'uwb = uwb.uwb:main',
+            'read_sensor = uwb.read_sensor:main',
         ],
     },
 )
