@@ -4,13 +4,15 @@ To run the software in the loop simulation you need to open three different term
 
 1) Run the gazebo environment and start the Micro-XRCE-DDS-Agent:
 
+Run the script
+
 ```bash
 cd ~/PX4-mini-drone
 chmod a+x sitl_enviroment_setup.sh
 ./sitl_enviroment_setup.sh
 ```
 
-alternatively
+or alternatively
 
 ```bash
 cd ~/PX4-mini-drone

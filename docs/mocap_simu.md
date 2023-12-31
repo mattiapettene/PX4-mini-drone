@@ -17,6 +17,8 @@ The following parameters must be set to use external position information with E
 
 ## Select the qualysis topic
 
+Remember to install the *[Qualisys - ros2 bridge](plugins.md)* plugin before using the *Bridge motion capture to PX4* and follow the instructions to set the right frequency rate and the correct ip address.
+
 In order to publish the px4 message with the external positon estimate you have to select the correct topic where qualysis publish is message.
 
 ```bash
@@ -24,7 +26,11 @@ cd ~/PX4-mini-drone/bridge_mocap_px4/src/
 nano mocap_bridge.cpp
 ```
 
-Modify the line ```	std::string topic_name = "/Drone/pose"``` with your topic name.
+Modify the line ```std::string topic_name = "/Drone/pose"``` with your topic name.
+
+## Run qualysis
+
+Before lunch the *motion to PX4 bridge* make sure the qualysis program is running and that the body is recognised by the motion capture system.
 
 ## Bridge motion capture to PX4
 
@@ -53,4 +59,11 @@ ros2 run mcoap mocap
 ```bash
 cd ~/PX4-mini-drone
 ros2 run mcoap mocap_vel
+```
+
+*Square trajectory*
+
+```bash
+cd ~/PX4-mini-drone
+ros2 run mcoap mocap_square
 ```

@@ -1,6 +1,4 @@
-# PX4-mini-drone
-
-[![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+# PX4-mini-drone [![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 ## Introduction
 
@@ -13,6 +11,10 @@ This project aim is to perform an offboard application using three different pos
 <!-- ## Results
 
 All the results and discussions are reported in the following paper: []() -->
+
+## Drone
+
+![](/docs/images/drone1.webp) ![](/docs/images/drone2.webp)
 
 ## Guide
 
