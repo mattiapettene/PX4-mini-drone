@@ -14,7 +14,7 @@ All the results and discussions are reported in the following paper: []() -->
 
 ## Drone
 
-![](/docs/images/drone1.webp) ![](/docs/images/drone2.webp)
+<img src="docs/images/drone1.webp" alt="image" width="20%" height="auto"> <img src="docs/images/drone2.webp" alt="image" width="20%" height="auto">
 
 ## Guide
 
