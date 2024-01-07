@@ -39,13 +39,13 @@ To lunch the simulation including the UWB world:
 make px4_sitl gazebo-classic_iris PX4_SITL_WORLD=my_world
 ```
 
-## Position plugin
+## Position plugin (used to simulate motion capture system)
 
-To use the uwb gazebo plugin you need to install and build the following repository:
+To use the position gazebo plugin you need to install and build the following repository:
 
 - [position_plugin](https://github.com/GiacomoCorradini/position_gazebo_plugin)
 
-To use the uwb plugin, add the following lines befor ```</model>``` to ```~/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/models/iris.sdf``` file
+To use the position plugin, add the following lines befor ```</model>``` to ```~/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/models/iris.sdf``` file
 
 ```xml
 <plugin name='libposition_plugin' filename='libposition_plugin.so'>
