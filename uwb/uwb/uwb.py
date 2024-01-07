@@ -12,6 +12,7 @@ from px4_msgs.msg import TrajectorySetpoint
 from px4_msgs.msg import VehicleCommand
 from px4_msgs.msg import VehicleStatus
 from px4_msgs.msg import VehicleOdometry
+from px4_msgs.msg import VehicleLocalPosition
 from rosmsgs.msg import RangingArray
 from visualization_msgs.msg import MarkerArray
 
@@ -33,8 +34,8 @@ class OffboardControl(Node):
                                                                        "/uwb_ranging", self.uwb_ranging, 1)
         self.vehicle_local_position_subscriber_ = self.create_subscription(VehicleOdometry, 
                                                                        "/fmu/out/vehicle_odometry", self.get_vehicle_position, qos_profile)
-        # self.vehicle_status_subscriber_ = self.create_subscription(VehicleStatus, 
-        #                                                                "/fmu/out/vehicle_status", self.get_vehicle_status, qos_profile)
+        self.vehicle_status_subscriber_ = self.create_subscription(VehicleStatus, 
+                                                                       "/fmu/out/vehicle_status", self.get_vehicle_status, qos_profile)
         self.offboard_control_mode_publisher_ = self.create_publisher(OffboardControlMode,
                                                                         "/fmu/in/offboard_control_mode", qos_profile)
         self.trajectory_setpoint_publisher_ = self.create_publisher(TrajectorySetpoint,
@@ -43,6 +44,8 @@ class OffboardControl(Node):
                                                                 "/fmu/in/vehicle_command", qos_profile)
         self.uwb_position_publisher_ = self.create_publisher(VehicleOdometry, 
                                                                 "/fmu/in/vehicle_visual_odometry", qos_profile)
+        self.groundtruth_subscriber_ = self.create_subscription(VehicleLocalPosition, 
+                                                                "/fmu/out/vehicle_local_position_groundtruth", self.get_vehicle_true_pos, qos_profile)
         
 
         timer_period = 0.1  # 100 milliseconds
@@ -58,6 +61,11 @@ class OffboardControl(Node):
         self.x = 0.0
         self.y = 0.0
         self.z = 0.0
+
+        # Vehicle groundtruth position
+        self.x_true = 0.0
+        self.y_true = 0.0
+        self.z_true = 0.0
 
         # Point list tajectory definition
         p1 = Point(0.0, 0.0, -2.0)
@@ -80,9 +88,9 @@ class OffboardControl(Node):
         self.ground_position = [None]
 
         # Plots
-        self.xgps_vec = []
-        self.ygps_vec = []
-        self.zgps_vec = []
+        self.xtrue_vec = []
+        self.ytrue_vec = []
+        self.ztrue_vec = []
 
         self.xuwb_vec = []
         self.yuwb_vec = []
@@ -307,7 +315,7 @@ class OffboardControl(Node):
         distances = self.anchors_range
 
         if num_anchors < 4:
-            raise ValueError("Numero insufficiente di ancore per la multilaterazione.")
+            raise ValueError("Anchors number not sufficient!")
         
         A = np.zeros((num_anchors - 1, 3))
         b = np.zeros((num_anchors - 1))
@@ -346,8 +354,9 @@ class OffboardControl(Node):
 
         drone_position = self.multilateration()
         
-        msg.position[0] = - drone_position[0]   #x
-        msg.position[1] = - drone_position[1]   #y
+        # Adapt UWB position to drone reference frame
+        msg.position[0] = drone_position[1]     #x
+        msg.position[1] = drone_position[0]     #y
         msg.position[2] = - drone_position[2]   #z
 
         self.uwb_position_publisher_.publish(msg) 
@@ -358,9 +367,9 @@ class OffboardControl(Node):
         # print("y =", - drone_position[1])
         # print("z =", - drone_position[2])
 
-        self.xgps_vec.append(self.x)
-        self.ygps_vec.append(self.y)
-        self.zgps_vec.append(self.z)
+        self.xtrue_vec.append(self.x_true)
+        self.ytrue_vec.append(self.y_true)
+        self.ztrue_vec.append(self.z_true)
 
         self.xuwb_vec.append(drone_position[0])
         self.yuwb_vec.append(drone_position[1])
@@ -371,23 +380,30 @@ class OffboardControl(Node):
 
         plt.figure(1)
         plt.title('x position')
-        plt.plot(self.xgps_vec)
-        plt.plot(self.yuwb_vec)
-        plt.legend(['x_gps', 'x_uwb'])
+        plt.plot(self.xtrue_vec)
+        plt.plot(self.yuwb_vec, linestyle='dashed')
+        plt.legend(['Groundtruth', 'UWB'])
 
         plt.figure(2)
         plt.title('y position')
-        plt.plot(self.ygps_vec)
-        plt.plot(self.xuwb_vec)
-        plt.legend(['y_gps', 'y_uwb'])
+        plt.plot(self.ytrue_vec)
+        plt.plot(self.xuwb_vec, linestyle='dashed')
+        plt.legend(['Groundtruth', 'UWB'])
 
         plt.figure(3)
         plt.title('z position')
-        plt.plot(self.zgps_vec)
-        plt.plot(self.zuwb_vec)
-        plt.legend(['z_gps', 'z_uwb'])
+        plt.plot(self.ztrue_vec)
+        plt.plot(self.zuwb_vec, linestyle='dashed')
+        plt.legend(['Groundtruth', 'UWB'])
 
         plt.show()
+
+    def get_vehicle_true_pos(self, msg):
+
+        self.x_true = msg.x
+        self.y_true = msg.y
+        self.z_true = msg.z
+        
 
 
 # Define a class Point 

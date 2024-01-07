@@ -29,11 +29,11 @@ class OffboardControl(Node):
                                                                     "/fmu/out/vehicle_status", self.get_vehicle_status, qos_profile)
         self.vehicle_local_position_subscriber_ = self.create_subscription(VehicleOdometry, 
                                                                     "/fmu/out/vehicle_odometry", self.get_vehicle_position, qos_profile)
-        self.vehicle_local_position_subscriber_ = self.create_subscription(VehicleOdometry, 
+        self.vehicle_mb1202_position_subscriber_ = self.create_subscription(VehicleOdometry, 
                                                                     "/Drone/mb1202", self.get_mb1202_position, qos_profile)
-        self.vehicle_local_position_subscriber_ = self.create_subscription(VehicleOdometry, 
+        self.vehicle_uwb_position_subscriber_ = self.create_subscription(VehicleOdometry, 
                                                                     "/Drone/uwb_pose", self.get_uwb_position, qos_profile)
-        self.vehicle_local_position_subscriber_ = self.create_subscription(VehicleOdometry, 
+        self.vehicle_mocap_position_subscriber_ = self.create_subscription(VehicleOdometry, 
                                                                     "/Drone/pose", self.get_mocap_position, qos_profile)
         self.offboard_control_mode_publisher_ = self.create_publisher(OffboardControlMode,
                                                                     "/fmu/in/offboard_control_mode", qos_profile)
@@ -289,22 +289,22 @@ class OffboardControl(Node):
 
     def get_mocap_position(self, msg):
         if(msg):
-            self.x_mocap = msg.position.x
-            self.y_mocap = msg.position.y
-            self.z_mocap = msg.position.z
+            self.x_mocap = msg.position[0]
+            self.y_mocap = msg.position[1]
+            self.z_mocap = msg.position[2]
 
     def get_uwb_position(self, msg):
         if(msg):
-            self.x_uwb = msg.position.x
-            self.y_uwb = msg.position.y
+            self.x_uwb = msg.position[0]
+            self.y_uwb = msg.position[1]
 
     def get_mb1202_position(self, msg):
        if(msg):
-            self.z_mb1202 = msg.position.z
+            self.z_mb1202 = msg.position[2]
 
     # Print to file
     def print_to_file(self):
-        self.f.write("{0},{1},{2},{3},{4},{5}\n".format(self.x_mocap, self.y_mocap, self.z_mocap, self.x_uwb, self.y_uwb, self.z_mb1202))
+        self.f.write("{0},{1},{2},{3},{4},{5},{6},{7},{8}\n".format(self.x,self.y,self.z,self.x_mocap, self.y_mocap, self.z_mocap, self.x_uwb, self.y_uwb, self.z_mb1202))
 
 # Define a class Point 
 class Point:
