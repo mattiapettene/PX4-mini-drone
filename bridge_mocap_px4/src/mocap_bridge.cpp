@@ -49,7 +49,7 @@ public:
 private:
 
 	std::string topic_name = "/Drone/pose";
-	bool flag_print = 0;
+	bool flag_print = 1;
 	bool ground_pos_flag = 0;
 	float x_ground = 0.0;
 	float y_ground = 0.0;
@@ -77,20 +77,21 @@ void MocapPX4Bridge::poseCallback(const geometry_msgs::msg::PoseStamped::UniqueP
 		z_ground = poseMsg->pose.position.z;
 		ground_pos_flag = 1;
 		printf("Initial position saved\n");
+		std::cout << "X: " << x_ground << '\t' << "Y: " << y_ground << '\t' << "Z: " << z_ground << "\n";
 	}
 
 
 	/**
 	 * @brief Convert Mocap reference frame into PX4 reference frame
 	*/
-	vehicle_odometry_Msg.position[0] = - (poseMsg->pose.position.y - y_ground);
-	vehicle_odometry_Msg.position[1] = - (poseMsg->pose.position.x - x_ground);
+	vehicle_odometry_Msg.position[0] = (poseMsg->pose.position.y - y_ground);
+	vehicle_odometry_Msg.position[1] = (poseMsg->pose.position.x - x_ground);
 	vehicle_odometry_Msg.position[2] = - (poseMsg->pose.position.z - z_ground);
 
-	vehicle_odometry_Msg.q[0] = poseMsg->pose.orientation.w;  // W = -W
-	vehicle_odometry_Msg.q[1] = poseMsg->pose.orientation.x;  // X = W
-	vehicle_odometry_Msg.q[2] = -poseMsg->pose.orientation.y; // Y = -Y
-	vehicle_odometry_Msg.q[3] = -poseMsg->pose.orientation.z; // Z = -Z
+	// vehicle_odometry_Msg.q[0] = poseMsg->pose.orientation.w;  // W = -W
+	// vehicle_odometry_Msg.q[1] = poseMsg->pose.orientation.x;  // X = W
+	// vehicle_odometry_Msg.q[2] = -poseMsg->pose.orientation.y; // Y = -Y
+	// vehicle_odometry_Msg.q[3] = -poseMsg->pose.orientation.z; // Z = -Z
 
 	if (flag_print){
 		std::cout << "X: " << vehicle_odometry_Msg.position[0] << '\t' << "Y: " << vehicle_odometry_Msg.position[1] << '\t' << "Z: " << vehicle_odometry_Msg.position[2] << "\n";
