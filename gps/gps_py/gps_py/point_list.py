@@ -58,7 +58,7 @@ class OffboardControl(Node):
         self.range = 1.0 # Set tolerance range to 100 cm
 
         self.status = 0
-        self.height_max = 2.0
+        self.height_max = p1
         self.takeoff_finished = 0
         self.landing_flag = 0 
 
