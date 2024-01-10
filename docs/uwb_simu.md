@@ -15,7 +15,27 @@ The following parameters must be set to use external position information with E
 | `EKF2_BARO_CTRL`| Disable Barometer sensor fusion|
 | `EKF2_RNG_CTRL`| Disable range finder sensor fusion|
 
-## Bridge UWB to PX4
+## Parameters Load (Instead of modifying it manually in QGroundControl)
+
+To perform the simulation with UWB (external positioning system) you need first to setup the PX4 parameters in QGroundControl. You can load the parameters for the UWB simulation by opening QGroundControl and loading the parameters present in the folder **QGround_parameters**. In particular, you can load:
+
+* [SITL_indoor_simu.params](/QGround_parameters/SITL_indoor_simu.params) - to perform Software in the loop simulations
+* [HITL_indoor_simu.params](/QGround_parameters/HITL_intdoor_simu.params) - to perform Hardware in the loop simulations
+* [indoor_test.params](/QGround_parameters/indoor_test.params) - to perform experimental simulations
+
+## Simulations
+
+Depending of the type of simulation that you want to perform, you need to setup the enviromnet following in different ways:
+
+* [Software in the loop](/docs/sitl.md), skip the step where specified *(Only for experimental simulations)*
+* [Hardware in the loop](/docs/hitl.md), skip the step where specified *(Only for experimental simulations)*
+* Experimental tests: make sure that your drone is in Ready to fly state before lauch the simulation (see next steps)
+
+To perfrom SITL and HITL simulations install first the **UWB plugin**, see section [plugin](/docs/plugins.md)
+
+## Bridge UWB to PX4 (Only for experimental simulations)
+
+**Before lauch the bridge make sure that your external postion reference frame system match the [drone reference frame](https://docs.px4.io/main/en/ros/external_position_estimation.html#reference-frames-and-ros), open [uwb_bridge](/bridge_uwb_px4/bridge_uwb_px4/uwb_bridge.py) [mb1202_bridge](/bridge_mb1202_px4/bridge_mb1202_px4/mb_1202_bridge.py) and modify if necessary**
 
 On the command prompt enter
 
@@ -25,3 +45,39 @@ ros2 launch launch/uwb_offboard.launch.py
 ```
 
 This will start the uwb and mb1202 bridges in order to fill the message fmu/in/vehicle_visual_odometry which is necessary for the external pose estimation
+
+## Run the program (Only SITL & HITL)
+
+Start the simulation, you can choose two different control strategy:
+
+*Point target*
+  
+```bash
+cd ~/PX4-mini-drone
+ros2 run uwb uwb
+```
+
+## Run the program (Experimental test)
+
+You can run the same program used for the motion capture simulations
+
+*Point target*
+  
+```bash
+cd ~/PX4-mini-drone
+ros2 run mcoap mocap
+```
+
+*Velocity target*
+  
+```bash
+cd ~/PX4-mini-drone
+ros2 run mcoap mocap_vel
+```
+
+*Square trajectory*
+
+```bash
+cd ~/PX4-mini-drone
+ros2 run mcoap mocap_square
+```

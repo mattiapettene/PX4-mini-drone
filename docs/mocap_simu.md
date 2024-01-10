@@ -15,7 +15,25 @@ The following parameters must be set to use external position information with E
 | `EKF2_BARO_CTRL`| Disable Barometer sensor fusion|
 | `EKF2_RNG_CTRL`| Disable range finder sensor fusion|
 
-## Select the qualysis topic
+## Parameters Load (Instead of modifying it manually in QGroundControl)
+
+To perform the simulation with motion capture (external positioning system) you need first to setup the PX4 parameters in QGroundControl. You can load the parameters for the MoCap simulation by opening QGroundControl and loading the parameters present in the folder **QGround_parameters**. In particular, you can load:
+
+* [SITL_indoor_simu.params](/QGround_parameters/SITL_indoor_simu.params) - to perform Software in the loop simulations
+* [HITL_indoor_simu.params](/QGround_parameters/HITL_intdoor_simu.params) - to perform Hardware in the loop simulations
+* [indoor_test.params](/QGround_parameters/indoor_test.params) - to perform experimental simulations
+
+## Simulations
+
+Depending of the type of simulation that you want to perform, you need to setup the enviromnet following in different ways:
+
+* [Software in the loop](/docs/sitl.md), skip the step where specified *(Only for experimental simulations)*
+* [Hardware in the loop](/docs/hitl.md), skip the step where specified *(Only for experimental simulations)*
+* Experimental tests: make sure that your drone is in Ready to fly state before lauch the simulation (see next steps)
+
+To perfrom SITL and HITL simulations install first the **Position plugin**, see section [plugin](/docs/plugins.md)
+
+## Select the qualysis topic (Only for experimental simulations)
 
 Remember to install the *[Qualisys - ros2 bridge](plugins.md)* plugin before using the *Bridge motion capture to PX4* and follow the instructions to set the right frequency rate and the correct ip address.
 
@@ -28,11 +46,13 @@ nano mocap_bridge.cpp
 
 Modify the line ```std::string topic_name = "/Drone/pose"``` with your topic name.
 
-## Run qualysis
+## Run qualysis (Only for experimental simulations)
 
 Before lunch the *motion to PX4 bridge* make sure the qualysis program is running and that the body is recognised by the motion capture system.
 
-## Bridge motion capture to PX4
+## Bridge motion capture to PX4 (All type of simulations)
+
+**Before lauch the bridge make sure that your external postion reference frame system match the [drone reference frame](https://docs.px4.io/main/en/ros/external_position_estimation.html#reference-frames-and-ros), open [mocap_bridge](/bridge_mocap_px4/src/mocap_bridge.cpp) and modify if necessary**
 
 On the command prompt enter
 
@@ -41,7 +61,7 @@ cd ~/PX4-mini-drone
 ros2 launch launch/mocap_offboard.launch.py
 ```
 
-This will start the qualysis plugin and start the bridge in order to fill the message fmu/in/vehicle_visual_odometry which is necessary for the external pose estimation
+This will start the qualysis plugin and start the bridge in order to fill the message fmu/in/vehicle_visual_odometry which is necessary for the external pose estimation. Without this step the vehicle will not be in ready to fly mode.
 
 ## Run the program
 

@@ -24,7 +24,7 @@ cd ~/PX4-mini-drone
 MicroXRCEAgent udp4 -p 8888
 ```
 
-2) Then the package has to be runned:
+2) Then the package can be runned:
 
 ```bash
 source ~/ws_combined_sensor/install/local_setup.bash
