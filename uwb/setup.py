@@ -22,6 +22,7 @@ setup(
         'console_scripts': [
             'uwb = uwb.uwb:main',
             'read_sensor = uwb.read_sensor:main',
+            'bridge_uwb = uwb.bridge_uwb_sitl:main',
         ],
     },
 )
