@@ -150,6 +150,8 @@ class UWB_Bridge_SITL(Node):
         msg.position[1] = drone_position[0]     #y
         msg.position[2] = - drone_position[2]   #z
 
+        msg.position_variance = [0.4,0.4,0.4]
+
         self.uwb_position_publisher_.publish(msg) 
 
         # Print drone coordinates from UWB
