@@ -8,9 +8,9 @@ This project aim is to perform an offboard application using three different pos
 - *Motion capture*
 - *Ultra wide band (UWB)*
 
-<!-- ## Results
+## Results
 
-All the results and discussions are reported in the following paper: []() -->
+All the results and discussions are reported in the following paper: [Project report](/docs/ES_project_report_Pettene_Corradini.pdf)
 
 ## Drone
 
