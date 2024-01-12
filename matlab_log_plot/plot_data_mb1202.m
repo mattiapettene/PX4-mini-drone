@@ -20,51 +20,38 @@ data = readtable("dati_read_sensor_2.csv");
 
 data_to_plot = struct();
 
-x_mocap = set_value(data.y_mocap);
-y_mocap = -set_value(data.x_mocap);
-x_uwb = set_value(data.x_uwb);
-y_uwb = set_value(data.y_uwb);
+z_mocap = set_value(data.z_mocap(1:217));
+z_mb1202 = set_value(data.z_mb1202(1:217));
 
-%% Outliers rejection
-window = 3;
-outliers_x = isoutlier(x_uwb, "movmedian", window);
-out_index_x = find(outliers_x);
-x_uwb_new = x_uwb;
-for i = out_index_x
+outliers = isoutlier(z_mb1202, "movmedian", 10);
+out_index = find(outliers);
+z_mb1202_new = z_mb1202;
+for i = out_index
     if i > 1
-        x_uwb_new(i) = x_uwb(i - 1); 
-        x_uwb(i) = x_uwb(i - 1);
-    end
-end
-outliers_y = isoutlier(y_uwb, "movmedian", window);
-out_index_y = find(outliers_y);
-y_uwb_new = y_uwb;
-for i = out_index_x
-    if i > 1
-        y_uwb_new(i) = y_uwb(i - 1);
-        y_uwb(i) = y_uwb(i - 1);
+        z_mb1202_new(i) = z_mb1202(i - 1); % Sostituisci con il valore precedente
+        z_mb1202(i) = z_mb1202(i - 1);
     end
 end
 
 
 %% Plot
 
-figure("Name","Original"), hold on
-plot(x_mocap, y_mocap,'-')
-plot(x_uwb_new, y_uwb_new, '.')
-legend({'Motion Capture', 'UWB'})
-title("Original")
-xlabel('x')
-ylabel('y')
+figure("Name","Z coordinate"), hold on
+plot(-z_mb1202_new,'-')
+plot(z_mocap,'--')
+legend({'mb1202','Motion Capture'})
+title("Z coordinate")
+xlabel('sample')
+ylabel('[m]')
 
 
-% %% Histograms
-% z_moc_hist = z_mocap(42:end);
-% z_mb_hist = z_mb1202_new(42:end);
-% hist_z = z_moc_hist - (-z_mb_hist);
-% hist_true = z_mocap - (-z_mb1202_new);
-% mean = mean(hist_true);
-% std = std(hist_true);
-% figure('Name','Histogram Z coordinate')
-% histogram(hist_true)
-% title('Histogram Z coordinate')
+%% Histograms
+z_moc_hist = z_mocap(42:end);
+z_mb_hist = z_mb1202_new(42:end);
+hist_z = z_moc_hist - (-z_mb_hist);
+hist_true = z_mocap - (-z_mb1202_new);
+mean = mean(hist_true);
+std = std(hist_true);
+figure('Name','Histogram Z coordinate')
+histogram(hist_true)
+title('Histogram Z coordinate')
