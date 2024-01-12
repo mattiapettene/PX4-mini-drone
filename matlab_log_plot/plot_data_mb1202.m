@@ -14,7 +14,7 @@ set(0,'DefaultFigureWindowStyle','docked')
 set(0,'DefaultUicontrolFontsize', 14)
 set(0, 'DefaultLineLineWidth', 3);
 
-data = readtable("dati_read_sensor_2.csv");
+data = readtable("data_collected_with_lab/dati_read_sensor_2.csv");
 
 %% Create new table to avoid Nan
 
