@@ -1,8 +1,5 @@
 import rclpy
 import numpy as np
-import math
-import matplotlib.pyplot as plt
-import pandas as pd
 from rclpy.node import Node
 from rclpy.clock import Clock
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy, QoSDurabilityPolicy
@@ -11,10 +8,10 @@ from px4_msgs.msg import VehicleOdometry
 from rosmsgs.msg import RangingArray
 from visualization_msgs.msg import MarkerArray
 
-class OffboardControl(Node):
+class UWB_Bridge_SITL(Node):
 
     def __init__(self):
-        super().__init__('OffboardControl')
+        super().__init__('UWB_Bridge_SITL')
 
         qos_profile = QoSProfile(
             reliability=QoSReliabilityPolicy.BEST_EFFORT,
@@ -46,20 +43,7 @@ class OffboardControl(Node):
         self.ground_flag = 0
         self.ground_position = [None]
 
-        # Plots
-        self.xtrue_vec = []
-        self.ytrue_vec = []
-        self.ztrue_vec = []
-
-        self.xuwb_vec = []
-        self.yuwb_vec = []
-        self.zuwb_vec = []
-
-        self.timer_ = self.create_timer(timer_period, self.timer_callback)
-
-    def timer_callback(self):
-
-        self.publish_pos_uwb()
+        self.timer_ = self.create_timer(timer_period, self.publish_pos_uwb)
 
     # ------ FUNCTIONS -------                                                                    
 
@@ -86,10 +70,8 @@ class OffboardControl(Node):
     def uwb_anchors(self, msg):
         
         self.n_anchors = len(msg.markers)
-        #print("ANC_LEN = ", len(msg.markers))
         
         # Fill vector only one time since anchors position is fixed
-
         for i in range(self.n_anchors):
             get_X = msg.markers[i].pose.position.x
             get_Y = msg.markers[i].pose.position.y
@@ -97,22 +79,11 @@ class OffboardControl(Node):
             self.anchors_position[i] = (get_X, get_Y, get_Z)
             self.anchors_id[i] = msg.markers[i].id
 
-            # print("ID = ", i)
-            # print("POSITION X = ", msg.markers[i].pose.position.x)
-            # print("POSITION Y = ", msg.markers[i].pose.position.y)
-            # print("POSITION Z = ", msg.markers[i].pose.position.z)
-            # print("POSITION = ", msg.markers[i].pose.position)
-
             if self.anchors_id[i] == 0:
                 x_ground = msg.markers[i].pose.position.x
                 y_ground = msg.markers[i].pose.position.y
                 z_ground = msg.markers[i].pose.position.z
                 self.anchor_ground = (x_ground, y_ground, z_ground)
-            
-        # print("x_ground = ", self.anchor_ground[0])
-        # print("y_ground = ", self.anchor_ground[1])
-        # print("z_ground = ", self.anchor_ground[2])
-
 
     # UWB anchors distance
     def uwb_ranging(self, msg):
@@ -186,43 +157,14 @@ class OffboardControl(Node):
         print("y =", - drone_position[1])
         print("z =", - drone_position[2])
 
-        self.xuwb_vec.append(drone_position[0])
-        self.yuwb_vec.append(drone_position[1])
-        self.zuwb_vec.append(- drone_position[2])
-
-
-    def plot(self):
-
-        plt.figure(1)
-        plt.title('x position')
-        plt.plot(self.xtrue_vec)
-        plt.plot(self.yuwb_vec, linestyle='dashed')
-        plt.legend(['Groundtruth', 'UWB'])
-
-        plt.figure(2)
-        plt.title('y position')
-        plt.plot(self.ytrue_vec)
-        plt.plot(self.xuwb_vec, linestyle='dashed')
-        plt.legend(['Groundtruth', 'UWB'])
-
-        plt.figure(3)
-        plt.title('z position')
-        plt.plot(self.ztrue_vec)
-        plt.plot(self.zuwb_vec, linestyle='dashed')
-        plt.legend(['Groundtruth', 'UWB'])
-
-        plt.show()
-
 def main(args=None):
     rclpy.init(args=args)
     print("Starting offboard control node...\n")
-    offboard_control = OffboardControl()
-    rclpy.spin(offboard_control)
+    uwb_Bridge_sitl = UWB_Bridge_SITL()
+    rclpy.spin(uwb_Bridge_sitl)
     # Destroy the node explicitly
-    offboard_control.destroy_node()
+    uwb_Bridge_sitl.destroy_node()
     rclpy.shutdown()
-
-
 
 if __name__ == '__main__':
     main()
