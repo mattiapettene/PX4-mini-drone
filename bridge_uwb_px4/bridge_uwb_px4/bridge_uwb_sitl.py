@@ -28,6 +28,7 @@ class UWB_Bridge_SITL(Node):
         timer_period = 0.02
 
         self.print_position = False
+        self.print_position_est = False
         self.print_velocity = False
 
         # Vehicle actual position (m)
@@ -152,14 +153,15 @@ class UWB_Bridge_SITL(Node):
         self.uwb_position_publisher_.publish(msg) 
 
         # Print drone coordinates from UWB
-        print("Posizione del drone:")
-        print("x =", - drone_position[0])
-        print("y =", - drone_position[1])
-        print("z =", - drone_position[2])
+        if(self.print_position_est):
+            print("Posizione del drone:")
+            print("x =", - drone_position[0])
+            print("y =", - drone_position[1])
+            print("z =", - drone_position[2])
 
 def main(args=None):
     rclpy.init(args=args)
-    print("Starting offboard control node...\n")
+    print("Starting uwb bridge SITL...\n")
     uwb_Bridge_sitl = UWB_Bridge_SITL()
     rclpy.spin(uwb_Bridge_sitl)
     # Destroy the node explicitly
