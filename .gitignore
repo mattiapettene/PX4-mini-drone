@@ -9,4 +9,4 @@ __pycache__
 dati.csv
 bridge_uwb_px4/matlab
 bridge_uwb_px4/tmp
-*.png
+matlab_log_plot/*.png
