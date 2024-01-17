@@ -33,6 +33,17 @@ Depending of the type of simulation that you want to perform, you need to setup 
 
 To perfrom SITL and HITL simulations install first the **UWB plugin**, see section [plugin](/docs/plugins.md)
 
+## Bridge UWB to PX4 (Only for SITL and HITL simulations)
+
+On the command prompt enter
+
+```bash
+cd ~/PX4-mini-drone
+ros2 run bridge_uwb_px4 uwb_bridge_sitl
+```
+
+This will start the bridge in order to fill the message fmu/in/vehicle_visual_odometry which is necessary for the external pose estimation
+
 ## Bridge UWB to PX4 (Only for experimental simulations)
 
 **Before lauch the bridge make sure that your external postion reference frame system match the [drone reference frame](https://docs.px4.io/main/en/ros/external_position_estimation.html#reference-frames-and-ros), open [uwb_bridge](/bridge_uwb_px4/bridge_uwb_px4/uwb_bridge.py) [mb1202_bridge](/bridge_mb1202_px4/bridge_mb1202_px4/mb_1202_bridge.py) and modify if necessary**
@@ -46,18 +57,7 @@ ros2 launch launch/uwb_offboard.launch.py
 
 This will start the uwb and mb1202 bridges in order to fill the message fmu/in/vehicle_visual_odometry which is necessary for the external pose estimation
 
-## Run the program (Only SITL & HITL)
-
-Start the simulation, you can choose two different control strategy:
-
-*Point target*
-  
-```bash
-cd ~/PX4-mini-drone
-ros2 run uwb uwb
-```
-
-## Run the program (Experimental test)
+## Run the program
 
 You can run the same program used for the motion capture simulations
 
